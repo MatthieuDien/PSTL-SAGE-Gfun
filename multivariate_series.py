@@ -12,7 +12,7 @@ import sage.structure.parent_base
 from sage.categories.all import Rings
 
 
-class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
+class FormalMultivariatePowerSeriesRing(Algebra):
 
     def __init__(self, R, element_class = None, names = None):
         
@@ -26,19 +26,28 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
 
         #Take care of the names
         if names is None:
-            names = 'z'
+            names = ['z']
   
         self._element_class = element_class if element_class is not None else FormalMultivariatePowerSeries
         self._order = None
-        self._name = names
+        self._names = names
 
         #TODO : LazyPowerSeriesRing herits from Algebra that use old style parent class
         #see structure.parent.parent ans structure.parent.parent_base
-        #sage.structure.parent_base.ParentWithBase.__init__(self, R)
-        sage.structure.parent_gens.ParentWithGens.__init__(self,base=R,names=names)
+        sage.structure.parent_base.ParentWithBase.__init__(self, R)
+        #sage.structure.parent_gens.ParentWithGens.__init__(self,base=R,names=names) 
 
     def ngens(self):
-        return len(self._name)
+        return self._ngens
+
+    def gen(self,i=0):
+        if i < 0 or n >= self._ngens:
+            raise ValueError("Generator not defined")
+        return self.element_class()
+
+    def gens(self):
+        # TODO
+        pass
 
     def __repr__(self):
         return "Formal Multivariate Power Series Ring over %s"%self.base_ring()
