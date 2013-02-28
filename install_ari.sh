@@ -3,8 +3,10 @@
 SAGE_ROOT="/Vrac/sage-5.7"
 SAGE_BIN="$SAGE_ROOT/sage"
 
-echo "Changing the sage's current branch to test"
-$SAGE_BIN -b test
+if [[ `$SAGE_BIN -branch` != "test" ]]; then
+	echo "Changing the sage's current branch to test"
+	$SAGE_BIN -b test
+fi
 
 if [[ $? -ne 0 ]]; then
 	echo -e "\nThe test branch doesn't exist"
