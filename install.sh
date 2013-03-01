@@ -5,8 +5,10 @@ if [[ $EUID -ne 0 ]]; then
    exit 100
 fi
 
-echo "Changing the sage's current branch to test"
-sage -b test
+if [[ `sage -branch` != "test" ]]; then
+    echo "Changing the sage's current branch to test"
+    sage -b test
+fi
 
 if [[ $? -ne 0 ]]; then
 	echo -e "\nThe test branch doesn't exist"
@@ -16,7 +18,7 @@ if [[ $? -ne 0 ]]; then
 	sage -b test
 fi
 
-SAGE_ROOT = `sage -root`
+SAGE_ROOT=`sage -root`
 
 echo -e "\nCopying the files\n"
 cp -v multivariate_series.py all.py $SAGE_ROOT/devel/sage-test/sage/combinat/species/
