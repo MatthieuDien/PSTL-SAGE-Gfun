@@ -632,6 +632,7 @@ class LazyPowerSeries(AlgebraElement):
                         ao += 1
                     else:
                         self.order = ao
+                        break
 
             #Try to recognize the zero series
             if ao == n:
@@ -642,10 +643,18 @@ class LazyPowerSeries(AlgebraElement):
                     self.aorder = inf
                     self.order  = inf
                     return
-            
+                
+            if self.order == unk:
+                while ao < n:
+                    if self._stream[ao] == 0:
+                        self.aorder += 1
+                        ao += 1
+                    else:
+                        self.order = ao
+                        break
 
-            if ao < n:
-                self.order = ao
+            # if ao < n:
+            #     self.order = ao
             
     
         if hasattr(self, '_reference') and self._reference is not None:
