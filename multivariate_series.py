@@ -27,7 +27,8 @@ class FormalMultivariatePowerSeriesRing(Algebra):
         #Take care of the names
         if names is None:
             names = ['z']
-  
+        
+        self._ngens = len(names)
         self._element_class = element_class if element_class is not None else FormalMultivariatePowerSeries
         self._order = None
         self._names = names
@@ -43,11 +44,10 @@ class FormalMultivariatePowerSeriesRing(Algebra):
     def gen(self,i=0):
         if i < 0 or n >= self._ngens:
             raise ValueError("Generator not defined")
-        return self.element_class()
+        return self.term(1,[int(j==i) for j in range(self._ngens)])
 
     def gens(self):
-        # TODO
-        pass
+        return [gen(i) for i in range(self._ngens)]
 
     def __repr__(self):
         return "Formal Multivariate Power Series Ring over %s"%self.base_ring()
@@ -60,12 +60,6 @@ class FormalMultivariatePowerSeriesRing(Algebra):
         cls = self._element_class
         BR = self.base_ring()
         
-        #TODO :
-        #This part must be changed, because tere is a bug :
-        #Try : 
-        #L = LazyPowerSeriesRing(QQ)
-        #f = L([0,0,0,0,1,0]); f.coefficents(6); f.order  ----> f.order = 1
-        #g = L(x**4); g.coefficients(6); g.order  ----> g.order = 4
         if x is None:
             res = cls(self, stream=None, order=unk, aorder=unk,
                       aorder_changed=True, is_initialized=False)
@@ -73,24 +67,24 @@ class FormalMultivariatePowerSeriesRing(Algebra):
             return res
 
         #Must be changed because inheritance
-        if isinstance(x, LazyPowerSeries):
-            x_parent = x.parent()
-            if x_parent.__class__ != self.__class__:
-                raise ValueError
+        #Useless for the moment
+        # if isinstance(x, LazyPowerSeries):
+        #     x_parent = x.parent()
+        #     if x_parent.__class__ != self.__class__:
+        #         raise ValueError
             
-            if x_parent.base_ring() == self.base_ring():
-                return x
-            else:
-                if self.base_ring().has_coerce_map_from(x_parent.base_ring()):
-                    return x._new(partial(x._change_ring_gen, self.base_ring()), lambda ao: ao, x, parent=self)
+        #     if x_parent.base_ring() == self.base_ring():
+        #         return x
+        #     else:
+        #         if self.base_ring().has_coerce_map_from(x_parent.base_ring()):
+        #             return x._new(partial(x._change_ring_gen, self.base_ring()), lambda ao: ao, x, parent=self)
         
 
         if hasattr(x, "parent") and BR.has_coerce_map_from(x.parent()):
             x = BR(x)
-            return self.term(x, 0)
+            return self.term(x, [0]*self._ngens)
         
 
-        #TODO : Think about the next lines
         if hasattr(x, "__iter__") and not isinstance(x, Stream_class):
             x = iter(x)
 
@@ -101,21 +95,33 @@ class FormalMultivariatePowerSeriesRing(Algebra):
             aorder = order if order != unk else 0
             return cls(self, stream=x, order=order, aorder=aorder,
                        aorder_changed=False, is_initialized=True)
-        #Seems OK for us
+
         elif not hasattr(x, "parent"):
             x = BR(x)
-            return self.term(x, 0)
+            return self.term(x, [0]*self._ngens)
             
         raise TypeError, "do not know how to coerce %s into self"%x
 
 
-    #Inherits zero_element from LazyPowerSeriesRing
-    #Inherits identity_element from LazyPowerSeriesRing
+    # Inherits zero_element from LazyPowerSeriesRing
+    # Inherits identity_element from LazyPowerSeriesRing
     
-    def gen(self, i=0):
-        #TODO : Think about the meaning of gen
-        pass
+    def term(self, r, n):
+        
 
+        if r == 0:
+            res = self._new_initial(inf, Stream(const=[]))
+            res._name = "0"
+        else:
+            if len(n)==self._ngens and (True in [n[i]<0 for i in range(len(n))]) :
+                raise ValueError, "values in n must be non-negative and len(n) need to be gen's number"
+            BR = self.base_ring()
+            s = [[]]*len(n)+[[(BR(r),n)]]+[[]]
+            res = self._new_initial(n, Stream(s))
+
+            res._name= "%s"%repr(r)+''.join(["*%s^%s"%(gen(i),n[i]) for i in range(self._ngens)])
+
+        return res
 
 class FormalMultivariatePowerSeries(LazyPowerSeries):
     pass
