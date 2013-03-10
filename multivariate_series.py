@@ -12,7 +12,7 @@ import sage.structure.parent_base
 from sage.categories.all import Rings
 
 
-class FormalMultivariatePowerSeriesRing(Algebra):
+class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
 
     def __init__(self, R, element_class = None, names = None):
         
@@ -42,12 +42,14 @@ class FormalMultivariatePowerSeriesRing(Algebra):
         return self._ngens
 
     def gen(self,i=0):
-        if i < 0 or n >= self._ngens:
+        if i < 0 or i >= self._ngens:
             raise ValueError("Generator not defined")
-        return self.term(1,[int(j==i) for j in range(self._ngens)])
+        res = self.term(1,[int(j==i) for j in range(self._ngens)])
+        res._name = self._names[i]
+        return res
 
     def gens(self):
-        return [gen(i) for i in range(self._ngens)]
+        return [self.gen(i) for i in range(self._ngens)]
 
     def __repr__(self):
         return "Formal Multivariate Power Series Ring over %s"%self.base_ring()
@@ -119,9 +121,100 @@ class FormalMultivariatePowerSeriesRing(Algebra):
             s = [[]]*len(n)+[[(BR(r),n)]]+[[]]
             res = self._new_initial(n, Stream(s))
 
-            res._name= "%s"%repr(r)+''.join(["*%s^%s"%(gen(i),n[i]) for i in range(self._ngens)])
+            res._name= "%s"%repr(r)+''.join(["*%s^%s"%(self._names[i],n[i]) for i in range(self._ngens)])
 
         return res
 
+    # Inherits _new_initial from LazyPowerSeriesRing
+    
+    # No methods for sum_gen and prod_gen (no very useful for the moment)
+    
+                                   
+
 class FormalMultivariatePowerSeries(LazyPowerSeries):
-    pass
+
+    def __init__(self, A, stream=None, order=None, aorder=None, aorder_changed=True, is_initialized=False, name=None):
+        LazyPowerSeries.__init__(self, A, stream=stream, order=order, aorder=aorder, aorder_changed=aorder_changed, is_initialized=is_initialized, name=name)
+
+    def refine_aorder(self):
+        #If we already know the order, then we don't have
+        #to worry about the approximate order
+        if self.order != unk:
+            return
+
+        #aorder can never be infinity since order would have to
+        #be infinity as well
+        assert self.aorder != inf
+        
+        if self.aorder == unk or not self.is_initialized:
+            self.compute_aorder()
+        else:
+            #Try to improve the approximate order
+            ao = self.aorder
+            c = self._stream
+            n = c.number_computed()
+
+
+            if ao == 0 and n > 0:
+                while ao < n:
+                    if self._stream[ao] == []:
+                        self.aorder += 1
+                        ao += 1
+                    else:
+                        self.order = ao
+                        break
+
+            #Try to recognize the zero series
+            if ao == n:
+                #For non-constant series, we cannot do anything
+                if not c.is_constant():
+                    return
+                if c[n-1] == []:
+                    self.aorder = inf
+                    self.order  = inf
+                    return
+                
+            if self.order == unk:
+                while ao < n:
+                    if self._stream[ao] == []:
+                        self.aorder += 1
+                        ao += 1
+                    else:
+                        self.order = ao
+                        break
+
+            # if ao < n:
+            #     self.order = ao
+            
+    
+        if hasattr(self, '_reference') and self._reference is not None:
+            self._reference._copy(self)
+
+    def _get_repr_info(self):
+        n = len(self._stream)
+        l = []
+        if self._stream[0] != []:
+            l = [(repr(self._stream[0][0]),1)]
+        for i in range(1,n):
+            t = self._stream[i]
+            if t != [] :
+                for e in t:
+                    l += [(''.join(['%s^%s'%(self.parent()._names[j],e[1][j])
+                                    for j in range(self.parent().ngens())]),e[0])]
+        return l                          
+            
+
+    def __repr__(self):
+        if self._name is not None:
+            return self._name
+        
+        if self.is_initialized:
+            n = len(self._stream)
+            x = self.parent()._names
+            l = repr_lincomb(self._get_repr_info())
+        else:
+            l = 'Uninitialized lazy power series'
+        return l
+
+
+    
