@@ -1,4 +1,4 @@
-from series import LazyPowerSeriesRing, LazyPowerSeries
+from series import LazyPowerSeriesRing, LazyPowerSeries, uninitialized
 
 from stream import Stream, Stream_class
 from series_order import  bounded_decrement, increment, inf, unk
@@ -115,11 +115,11 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
             res = self._new_initial(inf, Stream(const=[]))
             res._name = "0"
         else:
-            if len(n)==self._ngens and (True in [n[i]<0 for i in range(len(n))]) :
+            if len(n)!=self._ngens or (True in [n[i]<0 for i in range(len(n))]) :
                 raise ValueError, "values in n must be non-negative and len(n) need to be gen's number"
             BR = self.base_ring()
             s = [[]]*len(n)+[[(BR(r),n)]]+[[]]
-            res = self._new_initial(n, Stream(s))
+            res = self._new_initial(sum(n), Stream(s))
 
             res._name= "%s"%repr(r)+''.join(["*%s^%s"%(self._names[i],n[i]) for i in range(self._ngens)])
 
@@ -135,6 +135,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
 
     def __init__(self, A, stream=None, order=None, aorder=None, aorder_changed=True, is_initialized=False, name=None):
         LazyPowerSeries.__init__(self, A, stream=stream, order=order, aorder=aorder, aorder_changed=aorder_changed, is_initialized=is_initialized, name=name)
+        self._zero = []
 
     def refine_aorder(self):
         #If we already know the order, then we don't have
@@ -194,13 +195,20 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         n = len(self._stream)
         l = []
         if self._stream[0] != []:
-            l = [(repr(self._stream[0][0]),1)]
+            l = [(repr(self._stream[0][0][0]),1)]
         for i in range(1,n):
             t = self._stream[i]
             if t != [] :
                 for e in t:
-                    l += [(''.join(['%s^%s'%(self.parent()._names[j],e[1][j])
-                                    for j in range(self.parent().ngens())]),e[0])]
+                    s=[]
+                    for j in range(self.parent().ngens()):
+                        if e[1][j] == 0:
+                            pass
+                        elif e[1][j] == 1:
+                            s+=[self.parent()._names[j]]
+                        else:
+                            s+=['%s^%s'%(self.parent()._names[j],e[1][j])]
+                    l += [('*'.join(s),e[0])]
         return l                          
             
 
