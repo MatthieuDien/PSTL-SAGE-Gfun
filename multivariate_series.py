@@ -225,4 +225,35 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         return l
 
 
+    def _plus_gen(self,y,ao):
+
+        for n in range(ao):
+            yield []
+        n = ao
+        new_n = []
+        while True:
+            cy = y._stream[n]
+            for (e,l) in self._stream[n]:
+                c = (e,l)
+                for i in range(cy):
+                    if l == cy[i][1] :
+                        c[0] += t[0]
+                        cy = cy[0:i] + cy[i+1:]
+                        break
+                new_n.append(c)
+            new_n += (cy)
+            yield new_n
+            n += 1
     
+    def initialize_coefficient_stream(self, compute_coefficients):
+
+        ao = self.aorder
+        assert ao != unk
+
+        if ao == inf:
+            self.order = inf
+            self._stream = Stream(const=[])
+        else:
+            self._stream = Stream(compute_coefficients(ao))
+
+        self.is_initialized = True
