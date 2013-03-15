@@ -221,7 +221,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             x = self.parent()._names
             l = repr_lincomb(self._get_repr_info())
         else:
-            l = 'Uninitialized lazy power series'
+            l = 'Uninitialized formal multivariate power series'
         return l
 
 
@@ -235,9 +235,9 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             cy = y._stream[n]
             for (e,l) in self._stream[n]:
                 c = (e,l)
-                for i in range(cy):
+                for i in range(len(cy)):
                     if l == cy[i][1] :
-                        c[0] += t[0]
+                        c[0] += cy[i][0]
                         cy = cy[0:i] + cy[i+1:]
                         break
                 new_n.append(c)
