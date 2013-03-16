@@ -105,15 +105,21 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
         raise TypeError, "do not know how to coerce %s into self"%x
 
 
-    # Inherits zero_element from LazyPowerSeriesRing
-    # Inherits identity_element from LazyPowerSeriesRing
-    
+    def zero_element(self):
+        return self.term(0,[0]*self._ngens)
+
+    def identity_element(self):
+        return self.term(1,[0]*self._ngens)
+
     def term(self, r, n):
         
 
-        if r == 0:
+        if r == self.base_ring()(0):
             res = self._new_initial(inf, Stream(const=[]))
             res._name = "0"
+        elif sum(n) == 0:
+            res = self._new_initial(0, Stream([[(r,n)],[]]))
+            res._name = repr(r)
         else:
             if len(n)!=self._ngens or (True in [n[i]<0 for i in range(len(n))]) :
                 raise ValueError, "values in n must be non-negative and len(n) need to be gen's number"
@@ -194,21 +200,18 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
     def _get_repr_info(self):
         n = len(self._stream)
         l = []
-        if self._stream[0] != []:
-            l = [(repr(self._stream[0][0][0]),1)]
-        for i in range(1,n):
+        for i in range(0,n):
             t = self._stream[i]
-            if t != [] :
-                for e in t:
-                    s=[]
-                    for j in range(self.parent().ngens()):
-                        if e[1][j] == 0:
-                            pass
-                        elif e[1][j] == 1:
-                            s+=[self.parent()._names[j]]
-                        else:
-                            s+=['%s^%s'%(self.parent()._names[j],e[1][j])]
-                    l += [('*'.join(s),e[0])]
+            for e in t:
+                s=[]
+                for j in range(self.parent().ngens()):
+                    if e[1][j] == 0:
+                        pass
+                    elif e[1][j] == 1:
+                        s+=[self.parent()._names[j]]
+                    else:
+                        s+=['%s^%s'%(self.parent()._names[j],e[1][j])]
+                l += [('*'.join(s),e[0])]
         return l                          
             
 
@@ -230,18 +233,18 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         for n in range(ao):
             yield []
         n = ao
-        new_n = []
         while True:
+            new_n = []
             cy = y._stream[n]
-            for (e,l) in self._stream[n]:
-                c = (e,l)
+            for i in range(len(self._stream[n])):
+                c = self._stream[n][i]
                 for i in range(len(cy)):
-                    if l == cy[i][1] :
-                        c[0] += cy[i][0]
+                    if c[1] == cy[i][1] :
+                        c = (c[0]+cy[i][0],c[1])
                         cy = cy[0:i] + cy[i+1:]
                         break
                 new_n.append(c)
-            new_n += (cy)
+            new_n += cy
             yield new_n
             n += 1
     
@@ -257,3 +260,42 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             self._stream = Stream(compute_coefficients(ao))
 
         self.is_initialized = True
+
+    def _mul_(self, y):
+        return self._new(partial(self._times_gen, y), lambda a,b:a+b, self, y)                      
+
+    times = _mul_
+        
+    def _times_gen(self, y, ao):
+        for n in range(ao):
+            yield []
+
+        n = ao
+        while True:
+            low = self.aorder
+            high = n
+            nth_coefficient = []
+
+            #Handle the zero series
+            if low == inf or high == inf:
+                yield []
+                n += 1
+                continue
+
+            for k in range(low, high):
+                cx = self._stream[k]
+                for i in range(len(cx)):
+                    (h,t) = cx[i]
+                    for j in range(len(y._stream[n-k])):
+                        (e,l)=y._stream[n-k][j]
+                        nl=list(map(lambda a,b:a+b,t,l))
+                        already_in_list=False
+                        for ii in range(len(nth_coefficient)):
+                            if nth_coefficient[ii][1]==nl:
+                                nth_coefficient[ii] = (nth_coefficient[ii][0]+e*h,nl)
+                                already_in_list = True
+                                break
+                        if not(already_in_list) :
+                            nth_coefficient+=[(h*e,nl)]
+            yield nth_coefficient
+            n += 1
