@@ -124,7 +124,7 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
             if len(n)!=self._ngens or (True in [n[i]<0 for i in range(len(n))]) :
                 raise ValueError, "values in n must be non-negative and len(n) need to be gen's number"
             BR = self.base_ring()
-            s = [[]]*len(n)+[[(BR(r),n)]]+[[]]
+            s = [[]]*sum(n)+[[(BR(r),n)]]+[[]]
             res = self._new_initial(sum(n), Stream(s))
 
             res._name= "%s"%repr(r)+''.join(["*%s^%s"%(self._names[i],n[i]) for i in range(self._ngens)])
@@ -142,6 +142,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
     def __init__(self, A, stream=None, order=None, aorder=None, aorder_changed=True, is_initialized=False, name=None):
         LazyPowerSeries.__init__(self, A, stream=stream, order=order, aorder=aorder, aorder_changed=aorder_changed, is_initialized=is_initialized, name=name)
         self._zero = []
+        self._pows = None
 
     def refine_aorder(self):
         #If we already know the order, then we don't have
@@ -200,7 +201,9 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
     def _get_repr_info(self):
         n = len(self._stream)
         l = []
-        for i in range(0,n):
+        if self._stream[0] <> []:
+            l = [(repr(self._stream[0][0][0]),1)]
+        for i in range(1,n):
             t = self._stream[i]
             for e in t:
                 s=[]
@@ -211,7 +214,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
                         s+=[self.parent()._names[j]]
                     else:
                         s+=['%s^%s'%(self.parent()._names[j],e[1][j])]
-                l += [('*'.join(s),e[0])]
+                l += [('*'.join(s),repr(e[0]))]
         return l                          
             
 
@@ -243,7 +246,8 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
                         c = (c[0]+cy[i][0],c[1])
                         cy = cy[0:i] + cy[i+1:]
                         break
-                new_n.append(c)
+                if c[0] <> 0:
+                    new_n.append(c)
             new_n += cy
             yield new_n
             n += 1
@@ -282,7 +286,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
                 n += 1
                 continue
 
-            for k in range(low, high):
+            for k in range(low, high+1):
                 cx = self._stream[k]
                 for i in range(len(cx)):
                     (h,t) = cx[i]
@@ -292,10 +296,59 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
                         already_in_list=False
                         for ii in range(len(nth_coefficient)):
                             if nth_coefficient[ii][1]==nl:
-                                nth_coefficient[ii] = (nth_coefficient[ii][0]+e*h,nl)
+                                tt = nth_coefficient[ii][0]+e*h
+                                if t <> 0:
+                                    nth_coefficient[ii] = (tt,nl)
+                                else :
+                                    nth_coefficient[ii] = ()
                                 already_in_list = True
                                 break
                         if not(already_in_list) :
                             nth_coefficient+=[(h*e,nl)]
+                        else :
+                            if nth_coefficient[ii] == ():
+                                nth_coefficient=nth_coefficient[:ii]+nth_coefficient[ii+1:]
             yield nth_coefficient
             n += 1
+
+    def _pows_gen(self):
+        n=0
+        A=self
+        yield self.parent().identity_element()
+        yield self
+        while True:
+            A=A*self
+            yield A
+
+    def pows(self,i):
+        if self._pows is None :
+            self._pows = Stream(self._pows_gen())
+        return self._pows[i]
+
+    def _seq_gen(self,ao):
+        assert self.coefficient(0) == []
+        yield [(self.base_ring()(1),[0]*self.parent()._ngens)]
+        k=1
+        while True:
+            nth_coefficient = []
+            for i in range(1,k+1):
+                for (e,l) in self.pows(i).coefficient(k):
+                    already_in_list=False
+                    for ii in range(len(nth_coefficient)):
+                        if l == nth_coefficient[ii][1]:
+                            tt = e+nth_coefficient[ii][0]
+                            if tt <> 0:
+                                nth_coefficient[ii]=(tt,l)
+                            else :
+                                nth_coefficient[ii]=()
+                            already_in_list = True
+                    if not(already_in_list) :
+                            nth_coefficient += [(e,l)]
+                    else:
+                        if nth_coefficient[ii] == ():
+                            nth_coefficient=nth_coefficient[:ii]+nth_coefficient[ii+1:]
+            yield nth_coefficient
+            k +=1
+
+    def seq(self):
+        return self._new(self._seq_gen, lambda *a : 0 )
