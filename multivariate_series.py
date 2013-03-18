@@ -240,12 +240,14 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             return self._stream[n]
 
         elif len(n) == self.parent().ngens():
+            n=list(n)
             if self.get_aorder() > sum(n):
-                return self._zero
+                return self.parent().base_ring()(0)
             assert self.is_initialized
-            r=[e for (e,l) in self._stream[n] if l==n]
-            return r if r<>[] else self.parent().base_ring()(0)
-
+            r=[e for (e,l) in self._stream[sum(n)] if l==n]
+            return r[0] if r<>[] else self.parent().base_ring()(0)
+        else:
+            raise ValueError, "n must be an integer or an integer's list of size ngens()"
 
     def _plus_gen(self,y,ao):
 
