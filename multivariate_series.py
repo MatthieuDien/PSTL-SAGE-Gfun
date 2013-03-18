@@ -230,6 +230,22 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             l = 'Uninitialized formal multivariate power series'
         return l
 
+    def coefficient(self,*n):
+        
+        if len(n) == 1:
+            n=n[0]
+            if self.get_aorder() > n:
+                return self._zero
+            assert self.is_initialized
+            return self._stream[n]
+
+        elif len(n) == self.parent().ngens():
+            if self.get_aorder() > sum(n):
+                return self._zero
+            assert self.is_initialized
+            r=[e for (e,l) in self._stream[n] if l==n]
+            return r if r<>[] else self.parent().base_ring()(0)
+
 
     def _plus_gen(self,y,ao):
 
@@ -312,18 +328,20 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             n += 1
 
     def _pows_gen(self):
-        n=0
         A=self
         yield self.parent().identity_element()
-        yield self
+        yield A
         while True:
             A=A*self
             yield A
 
-    def pows(self,i):
-        if self._pows is None :
-            self._pows = Stream(self._pows_gen())
-        return self._pows[i]
+    def __pow__(self,n):
+        if not isinstance(n, (int, Integer)) or n < 0:
+            raise ValueError, "n must be a nonnegative integer"
+        else:
+            if self._pows is None :
+                self._pows = Stream(self._pows_gen())
+            return self._pows[n]
 
     def _seq_gen(self,ao):
         assert self.coefficient(0) == []
@@ -332,7 +350,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         while True:
             nth_coefficient = []
             for i in range(1,k+1):
-                for (e,l) in self.pows(i).coefficient(k):
+                for (e,l) in self.__pow__(i).coefficient(k):
                     already_in_list=False
                     for ii in range(len(nth_coefficient)):
                         if l == nth_coefficient[ii][1]:
