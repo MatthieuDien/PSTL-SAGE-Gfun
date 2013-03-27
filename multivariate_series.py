@@ -105,20 +105,26 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
         raise TypeError, "do not know how to coerce %s into self"%x
 
 
-    # Inherits zero_element from LazyPowerSeriesRing
-    # Inherits identity_element from LazyPowerSeriesRing
-    
+    def zero_element(self):
+        return self.term(0,[0]*self._ngens)
+
+    def identity_element(self):
+        return self.term(1,[0]*self._ngens)
+
     def term(self, r, n):
         
 
-        if r == 0:
+        if r == self.base_ring()(0):
             res = self._new_initial(inf, Stream(const=[]))
             res._name = "0"
+        elif sum(n) == 0:
+            res = self._new_initial(0, Stream([[(r,n)],[]]))
+            res._name = repr(r)
         else:
             if len(n)!=self._ngens or (True in [n[i]<0 for i in range(len(n))]) :
                 raise ValueError, "values in n must be non-negative and len(n) need to be gen's number"
             BR = self.base_ring()
-            s = [[]]*len(n)+[[(BR(r),n)]]+[[]]
+            s = [[]]*sum(n)+[[(BR(r),n)]]+[[]]
             res = self._new_initial(sum(n), Stream(s))
 
             res._name= "%s"%repr(r)+''.join(["*%s^%s"%(self._names[i],n[i]) for i in range(self._ngens)])
@@ -136,6 +142,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
     def __init__(self, A, stream=None, order=None, aorder=None, aorder_changed=True, is_initialized=False, name=None):
         LazyPowerSeries.__init__(self, A, stream=stream, order=order, aorder=aorder, aorder_changed=aorder_changed, is_initialized=is_initialized, name=name)
         self._zero = []
+        self._pows = None
 
     def refine_aorder(self):
         #If we already know the order, then we don't have
@@ -194,21 +201,20 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
     def _get_repr_info(self):
         n = len(self._stream)
         l = []
-        if self._stream[0] != []:
+        if self._stream[0] <> []:
             l = [(repr(self._stream[0][0][0]),1)]
         for i in range(1,n):
             t = self._stream[i]
-            if t != [] :
-                for e in t:
-                    s=[]
-                    for j in range(self.parent().ngens()):
-                        if e[1][j] == 0:
-                            pass
-                        elif e[1][j] == 1:
-                            s+=[self.parent()._names[j]]
-                        else:
-                            s+=['%s^%s'%(self.parent()._names[j],e[1][j])]
-                    l += [('*'.join(s),e[0])]
+            for e in t:
+                s=[]
+                for j in range(self.parent().ngens()):
+                    if e[1][j] == 0:
+                        pass
+                    elif e[1][j] == 1:
+                        s+=[self.parent()._names[j]]
+                    else:
+                        s+=['%s^%s'%(self.parent()._names[j],e[1][j])]
+                l += [('*'.join(s),repr(e[0]))]
         return l                          
             
 
@@ -221,8 +227,148 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             x = self.parent()._names
             l = repr_lincomb(self._get_repr_info())
         else:
-            l = 'Uninitialized lazy power series'
+            l = 'Uninitialized formal multivariate power series'
         return l
 
+    def coefficient(self,*n):
+        
+        if len(n) == 1:
+            n=n[0]
+            if self.get_aorder() > n:
+                return self._zero
+            assert self.is_initialized
+            return self._stream[n]
 
+        elif len(n) == self.parent().ngens():
+            n=list(n)
+            if self.get_aorder() > sum(n):
+                return self.parent().base_ring()(0)
+            assert self.is_initialized
+            r=[e for (e,l) in self._stream[sum(n)] if l==n]
+            return r[0] if r<>[] else self.parent().base_ring()(0)
+        else:
+            raise ValueError, "n must be an integer or an integer's list of size ngens()"
+
+    def _plus_gen(self,y,ao):
+
+        for n in range(ao):
+            yield []
+        n = ao
+        while True:
+            new_n = []
+            cy = y._stream[n]
+            for i in range(len(self._stream[n])):
+                c = self._stream[n][i]
+                for i in range(len(cy)):
+                    if c[1] == cy[i][1] :
+                        c = (c[0]+cy[i][0],c[1])
+                        cy = cy[0:i] + cy[i+1:]
+                        break
+                if c[0] <> 0:
+                    new_n.append(c)
+            new_n += cy
+            yield new_n
+            n += 1
     
+    def initialize_coefficient_stream(self, compute_coefficients):
+
+        ao = self.aorder
+        assert ao != unk
+
+        if ao == inf:
+            self.order = inf
+            self._stream = Stream(const=[])
+        else:
+            self._stream = Stream(compute_coefficients(ao))
+
+        self.is_initialized = True
+
+    def _mul_(self, y):
+        return self._new(partial(self._times_gen, y), lambda a,b:a+b, self, y)                      
+
+    times = _mul_
+        
+    def _times_gen(self, y, ao):
+        for n in range(ao):
+            yield []
+
+        n = ao
+        while True:
+            low = self.aorder
+            high = n
+            nth_coefficient = []
+
+            #Handle the zero series
+            if low == inf or high == inf:
+                yield []
+                n += 1
+                continue
+
+            for k in range(low, high+1):
+                cx = self._stream[k]
+                for i in range(len(cx)):
+                    (h,t) = cx[i]
+                    for j in range(len(y._stream[n-k])):
+                        (e,l)=y._stream[n-k][j]
+                        nl=list(map(lambda a,b:a+b,t,l))
+                        already_in_list=False
+                        for ii in range(len(nth_coefficient)):
+                            if nth_coefficient[ii][1]==nl:
+                                tt = nth_coefficient[ii][0]+e*h
+                                if t <> 0:
+                                    nth_coefficient[ii] = (tt,nl)
+                                else :
+                                    nth_coefficient[ii] = ()
+                                already_in_list = True
+                                break
+                        if not(already_in_list) :
+                            nth_coefficient+=[(h*e,nl)]
+                        else :
+                            if nth_coefficient[ii] == ():
+                                nth_coefficient=nth_coefficient[:ii]+nth_coefficient[ii+1:]
+            yield nth_coefficient
+            n += 1
+
+    def _pows_gen(self):
+        A=self
+        yield self.parent().identity_element()
+        yield A
+        while True:
+            A=A*self
+            yield A
+
+    def __pow__(self,n):
+        if not isinstance(n, (int, Integer)) or n < 0:
+            raise ValueError, "n must be a nonnegative integer"
+        else:
+            if self._pows is None :
+                self._pows = Stream(self._pows_gen())
+            return self._pows[n]
+
+    def _seq_gen(self,ao):
+        assert self.coefficient(0) == []
+        yield [(self.base_ring()(1),[0]*self.parent()._ngens)]
+        k=1
+        while True:
+            nth_coefficient = []
+            for i in range(1,k+1):
+                for (e,l) in self.__pow__(i).coefficient(k):
+                    already_in_list=False
+                    for ii in range(len(nth_coefficient)):
+                        if l == nth_coefficient[ii][1]:
+                            tt = e+nth_coefficient[ii][0]
+                            if tt <> 0:
+                                nth_coefficient[ii]=(tt,l)
+                            else :
+                                nth_coefficient[ii]=()
+                            already_in_list = True
+                    if not(already_in_list) :
+                            nth_coefficient += [(e,l)]
+                    else:
+                        if nth_coefficient[ii] == ():
+                            nth_coefficient=nth_coefficient[:ii]+nth_coefficient[ii+1:]
+            yield nth_coefficient
+            k +=1
+
+    def seq(self):
+        return self._new(self._seq_gen, lambda *a : 0 )
