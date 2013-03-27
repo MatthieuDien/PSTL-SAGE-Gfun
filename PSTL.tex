@@ -1,0 +1,83 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}                      
+
+\usepackage{array}
+\usepackage{rotating}
+\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{dsfont}
+\usepackage[french]{algorithm2e}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{txfonts}
+\usepackage[amsmath,thmmarks,thref,hyperref]{ntheorem}
+\usepackage[all]{xy}
+\frenchspacing
+\usepackage{bbold}
+\usepackage{pifont}
+
+\hypersetup{
+      backref=true,    
+     pagebackref=true,
+     hyperindex=true,
+     colorlinks=true,
+     breaklinks=true,
+     urlcolor= blue,
+     linkcolor= black,
+     citecolor=black,
+     bookmarks=true,
+     bookmarksopen=true,
+     pdftitle={rapport},
+     pdfauthor={Marguerite Zamansky},
+     }
+     
+\newtheorem*{definition}{Définition}
+
+\title{Outils de combinatoire analytique en Sage}
+\author{Matthieu Dien, Marguerite Zamansky\\
+encadrés par Antoine Genitrini et Frederic Peschanski }    
+\begin{document}
+     
+     \maketitle
+     
+\section{Introduction}
+Là, je raconte le projet, j'explique en gros ce qu'on fait.
+\subsection{Quelques bases de combinatoire analytique}
+La combinatoire analytique a pour but de décrire de manière quantitatives des structures combinatoires en utilisant des outils analytiques. Il faut que j'ajoute des trucs ici.
+\begin{definition}
+  Une \underline{classe combinatoire} est un ensemble fini ou dénombrable sur lequel est défini une fonction taille qui vérifie les conditions suivantes : 
+  \begin{itemize}
+    \item la taille d'un élément est un entier positif ,
+    \item il y a un nombre fini d'élément de chaque taille.
+  \end{itemize}
+\end{definition}
+
+\begin{definition}
+La \underline{suite de comptage} d'une classe combinatoire $\mathcal A$ est la suite $(A_n)_{n \geqslant 0}$ où $A_n$ est le nombre d'objet de taille $n$ dans $\mathcal A$.
+\end{definition}
+
+\begin{definition}
+  La \underline{série génératrice ordinaire} d'une suite $(A_n)$ est la série entière
+  $$A(z) = \sum_{n=0}^{\infty} A_n z^n .$$
+  La série génératrice ordinaire d'une classe combinatoire est la série génératrice ordinaire de sa suite de comptage. De manière équivalente, le série génératrice d'une classe combinatoire $\mathcal A$ peut s'écrire sous la forme 
+  $$A(z) = \sum_{a \in \mathcal A} z ^{|a|} .$$
+\end{definition}
+
+Connaître cette série, c'est donc connaître le nombre d'objet de chaque taille de la classe combinatoire étudiée. Pour connaître le nombre d'objet de taille $n$, il faut extraire le $n$-ième coefficient de cette série génératrice. Si on note $f(z)$ la série entière$\sum f_n z^n$, on note $[z^n]f(z)$ l'extraction du coefficient de $z^n$.
+
+exemple partition d'entier
+\subsection{Fonctions génératrices multivariées}
+
+\section{Sage}
+
+\subsection{Représentation des séries}
+Lazy, Stream et tout ça, représentation…
+\subsection{Opérateurs}
+\subsubsection{Addition}
+\subsubsection{Multiplication}
+\subsubsection{Séquence}
+\end{document}
