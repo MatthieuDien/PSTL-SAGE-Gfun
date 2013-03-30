@@ -295,7 +295,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         n = ao
         while True:
             low = self.aorder
-            high = n
+            high = n - y.aorder
             nth_coefficient = []
 
             #Handle the zero series
@@ -372,3 +372,20 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
 
     def seq(self):
         return self._new(self._seq_gen, lambda *a : 0 )
+
+
+    def toPolynom(self,n):
+        if n>0:
+            from sage.rings.polynomial.all import PolynomialRing
+            ngen = self.parent().ngens()
+            BR=self.parent().base_ring()
+            R = PolynomialRing(BR,self.parent()._names)
+            v = R.gens()
+            pol = R(0)
+            for i in range(n):
+                l = self.coefficient(i)
+                for (e,t) in l:
+                    pol += e*reduce((lambda a,b:a*b),map((lambda a,b:a**b),v,t))
+            return R,pol
+        else:
+            raise ValueError, "n must be a nonnegative integer"
