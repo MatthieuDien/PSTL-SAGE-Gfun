@@ -32,11 +32,10 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
         self._element_class = element_class if element_class is not None else FormalMultivariatePowerSeries
         self._order = None
         self._names = names
+        self._gens = [None]*self._ngens
 
         #TODO : LazyPowerSeriesRing herits from Algebra that use old style parent class
-        #see structure.parent.parent ans structure.parent.parent_base
         sage.structure.parent_base.ParentWithBase.__init__(self, R)
-        #sage.structure.parent_gens.ParentWithGens.__init__(self,base=R,names=names) 
 
     def ngens(self):
         return self._ngens
@@ -44,9 +43,10 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
     def gen(self,i=0):
         if i < 0 or i >= self._ngens:
             raise ValueError("Generator not defined")
-        res = self.term(1,[int(j==i) for j in range(self._ngens)])
-        res._name = self._names[i]
-        return res
+        if self._gens[i] == None :
+            self._gens[i] = self.term(1,[int(j==i) for j in range(self._ngens)])
+            self._gens[i]._name = self._names[i]
+        return self._gens[i]
 
     def gens(self):
         return [self.gen(i) for i in range(self._ngens)]
@@ -54,9 +54,6 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
     def __repr__(self):
         return "Formal Multivariate Power Series Ring over %s"%self.base_ring()
 
-    #Inherits __cmp__ from LazyPowerSeriesRing
-    #Inherits _coerce_impl from LazyPowerSeriesRing
-    
     def __call__(self, x=None, order=unk):
         
         cls = self._element_class
@@ -283,11 +280,6 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
 
         self.is_initialized = True
 
-    def _mul_(self, y):
-        return self._new(partial(self._times_gen, y), lambda a,b:a+b, self, y)                      
-
-    times = _mul_
-        
     def _times_gen(self, y, ao):
         for n in range(ao):
             yield []
@@ -362,6 +354,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
                             else :
                                 nth_coefficient[ii]=()
                             already_in_list = True
+                            break
                     if not(already_in_list) :
                             nth_coefficient += [(e,l)]
                     else:
@@ -373,11 +366,28 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
     def seq(self):
         return self._new(self._seq_gen, lambda *a : 0 )
 
+    def composition(self,*args):
+        if len(args) != self.parent().ngens() :
+            raise ValueError, "you have to give %d arguments"%self.parent.ngens()
+        return self._new(partial(self._compose_gen, args),lambda *a : self.aorder)
+
+    __call__ = composition
+
+    def _compose_gen(self,args,ao):   
+        for f in args :
+            assert f.coefficient(0) == []
+        new_serie = self.parent()(self.coefficient(0)[0][0])
+        yield new_serie.coefficient(0)
+        n = 1
+        while True :
+            for (e,l) in self.coefficient(n) :
+                new_serie += reduce(lambda a,b : a*b, map(lambda a,b: a.__pow__(b), args, l), e)
+            yield new_serie.coefficient(n)
+            n+=1
 
     def toPolynom(self,n):
         if n>0:
             from sage.rings.polynomial.all import PolynomialRing
-            ngen = self.parent().ngens()
             BR=self.parent().base_ring()
             R = PolynomialRing(BR,self.parent()._names)
             v = R.gens()
