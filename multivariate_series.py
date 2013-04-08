@@ -377,7 +377,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         for f in args :
             assert f.coefficient(0) == []
         first_term = self.coefficient(0)
-        new_serie = self.parent()(first_term[0][0]) if first_term != [] else self.parent().zero()
+        new_serie = self.parent()(first_term[0][0]) if first_term != [] else self.parent().zero_element()
         yield new_serie.coefficient(0)
         n = 1
         while True :
