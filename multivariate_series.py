@@ -376,7 +376,8 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
     def _compose_gen(self,args,ao):   
         for f in args :
             assert f.coefficient(0) == []
-        new_serie = self.parent()(self.coefficient(0)[0][0])
+        first_term = self.coefficient(0)
+        new_serie = self.parent()(first_term[0][0]) if first_term != [] else self.parent().zero()
         yield new_serie.coefficient(0)
         n = 1
         while True :
@@ -384,6 +385,26 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
                 new_serie += reduce(lambda a,b : a*b, map(lambda a,b: a.__pow__(b), args, l), e)
             yield new_serie.coefficient(n)
             n+=1
+
+    def derivative(self,var):
+        return self._new(partial(self._diff_gen,var),bounded_decrement,self)
+
+    def _diff_gen(self,var,ao):
+        gens = self.parent().gens()
+        if var not in gens:
+            raise ValueError, "argument must be a generator"
+        ind = gens.index(var)
+        n=1
+        while True:
+            nth_coefficient = []
+            for (c,l) in self.coefficient(n):
+                if l[ind] != 0:
+                    nl = l[:]
+                    nl[ind] -= 1
+                    nth_coefficient += [(c*l[ind],nl)]
+            yield nth_coefficient
+            n+=1
+        
 
     def toPolynom(self,n):
         if n>0:
