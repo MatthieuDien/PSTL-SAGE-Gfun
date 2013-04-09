@@ -109,10 +109,8 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
         return self.term(1,[0]*self._ngens)
 
     def term(self, r, n):
-        
-
         if r == self.base_ring()(0):
-            res = self._new_initial(inf, Stream(const=[]))
+            res = self._new_initial(inf, Stream([]))
             res._name = "0"
         elif sum(n) == 0:
             res = self._new_initial(0, Stream([[(r,n)],[]]))
@@ -227,18 +225,6 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             l = 'Uninitialized formal multivariate power series'
         return l
 
-    def _coefficient_vars(self,n,prev):
-        
-        if self.get_aorder() > sum(n):
-            return self.parent().base_ring()(0)
-        assert self.is_initialized
-        r=[e for (e,l) in self._stream[sum(n)] if l==n]
-        if prev == r:
-            return r[0] if r<>[] else self.parent().base_ring()(0)
-        else:
-            self._stream[self._stream.number_computed()+1]
-            return self._coefficient_vars(n,r)
-
     def coefficient(self,*n):
         
         if len(n) == 1:
@@ -249,13 +235,12 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             return self._stream[n]
 
         elif len(n) == self.parent().ngens():
-            # n=list(n)
-            # if self.get_aorder() > sum(n):
-            #     return self.parent().base_ring()(0)
-            # assert self.is_initialized
-            # r=[e for (e,l) in self._stream[sum(n)] if l==n]
-            # return r[0] if r<>[] else self.parent().base_ring()(0)
-            return self._coefficient_vars(list(n),None)
+            n=list(n)
+            if self.get_aorder() > sum(n):
+                return self.parent().base_ring()(0)
+            assert self.is_initialized
+            r=[e for (e,l) in self._stream[sum(n)] if l==n]
+            return r[0] if r<>[] else self.parent().base_ring()(0)
         else:
             raise ValueError, "n must be an integer or an integer's list of size ngens()"
 
@@ -390,12 +375,23 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         for f in args :
             assert f.coefficient(0) == []
         first_term = self.coefficient(0)
-        new_serie = self.parent()(first_term[0][0]) if first_term != [] else self.parent().zero_element()
-        yield new_serie.coefficient(0)
+        new_serie = None
+        uninitialized = True
+        if first_term != [] :
+            uninitialized = False
+            new_serie = self.parent()(first_term[0][0])
+            yield new_serie.coefficient(0)
+        else:
+            yield []
         n = 1
         while True :
             for (e,l) in self.coefficient(n) :
-                new_serie += reduce(lambda a,b : a*b, map(lambda a,b: a.__pow__(b), args, l), e)
+                temp = reduce(lambda a,b : a*b, map(lambda a,b: a.__pow__(b), args, l), e)
+                if uninitialized:
+                    uninitialized = False
+                    new_serie = temp
+                else :
+                    new_serie += temp
             yield new_serie.coefficient(n)
             n+=1
 
