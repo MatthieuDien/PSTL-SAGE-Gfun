@@ -227,6 +227,18 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             l = 'Uninitialized formal multivariate power series'
         return l
 
+    def _coefficient_vars(self,n,prev):
+        
+        if self.get_aorder() > sum(n):
+            return self.parent().base_ring()(0)
+        assert self.is_initialized
+        r=[e for (e,l) in self._stream[sum(n)] if l==n]
+        if prev == r:
+            return r[0] if r<>[] else self.parent().base_ring()(0)
+        else:
+            self._stream[self._stream.number_computed()+1]
+            return self._coefficient_vars(n,r)
+
     def coefficient(self,*n):
         
         if len(n) == 1:
@@ -237,12 +249,13 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             return self._stream[n]
 
         elif len(n) == self.parent().ngens():
-            n=list(n)
-            if self.get_aorder() > sum(n):
-                return self.parent().base_ring()(0)
-            assert self.is_initialized
-            r=[e for (e,l) in self._stream[sum(n)] if l==n]
-            return r[0] if r<>[] else self.parent().base_ring()(0)
+            # n=list(n)
+            # if self.get_aorder() > sum(n):
+            #     return self.parent().base_ring()(0)
+            # assert self.is_initialized
+            # r=[e for (e,l) in self._stream[sum(n)] if l==n]
+            # return r[0] if r<>[] else self.parent().base_ring()(0)
+            return self._coefficient_vars(list(n),None)
         else:
             raise ValueError, "n must be an integer or an integer's list of size ngens()"
 
