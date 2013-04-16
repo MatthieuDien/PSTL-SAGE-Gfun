@@ -1,0 +1,116 @@
+\documentclass{beamer}
+\mode<presentation>
+{\usetheme[left]{Goettingen}
+\useinnertheme[shadow]{rounded}
+}
+\usefonttheme{serif}
+
+\usepackage[french]{babel}
+
+\usepackage[applemac]{inputenc}
+
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{array}
+\usepackage{rotating}
+\usepackage{graphicx}
+\usepackage{hyperref} 
+
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{txfonts}
+
+\usepackage{color}
+\usepackage{multicol}
+\usepackage{multirow}
+
+\hypersetup{
+     backref=true,    %permet d'ajouter des liens dans...
+     pagebackref=true,%...les bibliographies
+     hyperindex=true, %ajoute des liens dans les index.
+     colorlinks=true, %colorise les liens
+     breaklinks=true, %permet le retour âˆšâ€  la ligne dans les liens trop longs
+     urlcolor= blue,  %couleur des hyperliens
+     linkcolor= , %couleur des liens internes
+     bookmarks=true,  %crâˆšÂ©âˆšÂ© des signets pour Acrobat
+     bookmarksopen=true,            %si les signets Acrobat sont crâˆšÂ©âˆšÂ©s,
+                                    %les afficher complâˆšÂ®tement.
+     pdftitle={Prsentation colour numbers of complete graphs}, %informations apparaissant dans
+     pdfauthor={Marguerite Zamansky},     %dans les informations du document
+     }
+
+
+
+\title	
+{Outils de combinatoire analytique en sage}
+\subtitle{Projet STL}
+
+\author
+{Matthieu Dien \and Marguerite Zamansky}
+
+\institute
+{Universit Pierre et Marie Curie}
+
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Sries gnratrices multivaries}
+
+On parle des sries multivaries
+
+Exemples : arbres binaires-ternaires, profondeur cumule sur arbre binaire.
+Avec les spcifications.
+\end{frame}
+
+\begin{frame}{Sage}
+\begin{itemize}
+\item logiciel libre de calcul formel et numrique
+\pause
+\item avec une interface en python.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Implmentation}
+\begin{block}{Formal multivariate power series}
+\begin{itemize}
+\item Bas sur le travail fait sur les sries gnratrices monovaries.
+\pause
+\item Reprsentation mmoire sous forme de stream.
+\end{itemize}
+\end{block}
+%\includegraphics[]{unpetitdessindestream.pdf}
+\end{frame}
+
+\begin{frame}{Dmonstration}
+\begin{block}{sage block}
+La spcification
+calcul des coefficients
+\end{block}
+\end{frame}
+
+\begin{frame}{Conclusion}
+\begin{itemize}
+\item Patch bug dans Sage
+\pause
+\item Proposition du package
+\pause
+\item Continuer l'implmentation pour avoir les fonctionnalits disponibles dans Gfun
+\end{itemize}
+\end{frame}
+
+\begin{frame}{}
+Merci ˆ Antoine Genitrini et Frdric Peschanski
+\bigskip
+
+\textit{\url {www.sagemath.org}}
+\bigskip
+
+Analytic Combinatorics, Philippe Flajolet et Robert Sedgewick
+\end{frame}
+\end{document}
