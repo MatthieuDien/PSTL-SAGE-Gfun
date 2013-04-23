@@ -60,28 +60,95 @@
 \titlepage
 \end{frame}
 
-\begin{frame}{Séries génératrices multivariées}
+\begin{frame}{Définitions}
 
-On parle des séries multivariées
+\begin{block}{Classe Combinatoire}
+Une classe combinatoire $\mathcal{A}$ est un ensemble muni d'une application taille $ | \cdot | : \mathcal{A} -> \mathbb{N} $
+tel que $$ \forall n \in \mathbb{N} , \{ a \in \mathcal{A} , |a| = n \} \text{ est fini} $$
+\end{block}
 
-Exemples : arbres binaires-ternaires, profondeur cumulée sur arbre binaire.
-Avec les spécifications.
+\begin{block}{Paramètre Scalaire}
+Un paramètre scalaire $\chi$  de $\mathcal{A}$  est une fonction surjective de $\mathcal{A}$ dans $\mathbb{N}$
+\end{block}
+
 \end{frame}
+
+\begin{frame}{Définitions}{(suite)}
+
+\begin{block}{Série génératrice multivariée}
+Une série génératrice $A$ associée à une classe combinatoire $\mathcal{A}$ et $k$ paramètres scalaires $\chi_j$ : 
+$$ A(X_1 \ldots X_k) = \sum_{i_1, \ldots ,i_k \ge 0}^{+\infty} a_{i_1, \ldots , i_k} \ X_1^{i_1} \ldots X_k^{i_k} $$
+permet de compter le nombre d'élément de $\mathcal{A}$ : $a_{i_1, \ldots , i_k} = \mathrm{Card}( e \in \mathcal{A}, \  \chi_j(e)=i_j, \ \forall j \in \llbracket 1 , k \rrbracket )$
+\end{block}
+
+\end{frame}
+
+
+\begin{frame}{S\'eries G\'en\'eratrices Multivari\'ees}{Exemple (1)}
+
+Arbres binaire-ternaire : \newline
+$$ ABT(z,u,v,w) = z \cdot w \ + \ u \cdot w \cdot ABT^2(z,u,v,w) \ + \  v \cdot w \cdot ABT^3(z,u,v,w) $$
+\newline
+\begin{description}
+\item[z] : les feuilles
+\item[u] : les n\oe{}uds binaires
+\item[v] : les n\oe{}uds ternaires
+\item[w] : la taille totale
+\end{description}
+
+\end{frame}
+
+\begin{frame}{S\'eries G\'en\'eratrices Multivari\'ees}{Exemple (2)}
+
+\begin{description}
+\item[Arbre de Catalan] : un arbre général (enraciné et planaire)
+\item[Longueur de cheminement] : somme des distances entre chaque noeud et la racine d'un arbre
+\end{description}
+
+\pause
+
+\bigskip
+
+Longueur de cheminement d'un arbre de Catalan :\newline
+$$ AG(z,u) = z \cdot SEQ(AG(zu,u)) $$
+\begin{description}
+\item[z] : le nombre de n\oe{}uds
+\item[u] : longueur de cheminement
+\end{description}
+
+%Exemples : arbres binaires-ternaires, profondeur cumul\'ee sur arbre binaire.
+%Avec les sp\'ecifications.
+
+\end{frame}
+
 
 \begin{frame}{Sage}
+
+\begin{figure}
+\includegraphics[width=2cm]{sage_logo_new.png}
+\end{figure}
+
 \begin{itemize}
-\item logiciel libre de calcul formel et numérique
+\item logiciel libre de calcul formel et num\'erique
 \pause
-\item avec une interface en python.
+\item regroupe des outils déjà connus et éprouvés (GP/PARI, GAP, Singular, Maxima)
+\pause
+\item et ses propres paquets (combinat, rings, matrix ...)
+\pause
+\item le tout interfacé par un top-level Python
 \end{itemize}
+
 \end{frame}
 
-\begin{frame}{Implémentation}
+
+
+
+\begin{frame}{Impl\'ementation}
 \begin{block}{Formal multivariate power series}
 \begin{itemize}
-\item Basé sur le travail fait sur les séries génératrices monovariées.
+\item Bas\'e sur le travail fait sur les s\'eries g\'en\'eratrices monovari\'ees.
 \pause
-\item Représentation mémoire sous forme de stream.
+\item Repr\'esentation m\'emoire sous forme de stream.
 \end{itemize}
 \end{block}
 %\includegraphics[]{unpetitdessindestream.pdf}
@@ -89,7 +156,7 @@ Avec les spécifications.
 
 \begin{frame}{Démonstration}
 \begin{block}{sage block}
-La spécification
+La sp\'ecification
 calcul des coefficients
 \end{block}
 \end{frame}
@@ -100,12 +167,12 @@ calcul des coefficients
 \pause
 \item Proposition du package
 \pause
-\item Continuer l'implémentation pour avoir les fonctionnalités disponibles dans Gfun
+\item Continuer l'impl\'ementation pour avoir les fonctionnalit\'es disponibles dans Gfun
 \end{itemize}
 \end{frame}
 
 \begin{frame}{}
-Merci à Antoine Genitrini et Frédéric Peschanski
+Merci \`a Antoine Genitrini et Fr\'ed\'eric Peschanski
 \bigskip
 
 \textit{\url {www.sagemath.org}}
