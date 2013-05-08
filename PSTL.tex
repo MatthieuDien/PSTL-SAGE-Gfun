@@ -15,10 +15,11 @@
 \usepackage{amssymb}
 \usepackage{txfonts}
 \usepackage[amsmath,thmmarks,thref,hyperref]{ntheorem}
-\usepackage[all]{xy}
+%\usepackage[all]{xy}
 \frenchspacing
 %\usepackage{bbold}
 \usepackage{pifont}
+\usepackage{sagetex}
 
 \hypersetup{
       backref=true,    
@@ -73,6 +74,76 @@ exemple partition d'entier
 \subsection{Fonctions génératrices multivariées}
 
 \section{Sage}
+
+\subsection{Introduction}
+Sage est un logiciel libre (sous licence GPL) de calcul formel, symbolique et
+numérique. Il est principalement écrit en C/C++ et Python/Cython/Pyrex. Le but
+du projet Sage est de fournir une alternative aux solutions de calculs
+propriétaires comme Mapple, Mathematica, Matlab ... \\
+Historiquement Sage est un regroupement de différents projets libres autour
+d'une interface Python unifiée, pour faciliter les traitements entre ces
+\emph{briques de base} (Singular, Maxima, GP/PARI, GAP). Mais de plus en plus
+le projet se tourne vers le développement de ses propres paquetages pour
+acquérir son indépendance, donc améliorée la cohérence de l'architecture, 
+du le calendrier de release et faciliter ainsi le développement de nouvelles
+fonctionnalités et la maintenance d'ancienne.\\
+Dans Sage, deux interfaces sont disponibles :
+\begin{itemize}
+\item L'interface bloc-note (ou notebook). Elle se présente sous la forme
+ d'une interface embarquée dans un navigateur web, comme ceci :
+\begin{figure}[h]
+\includegraphics[width=17cm]{notebook_screenshot.png}
+\end{figure}
+\item L'interface ligne de commande. Elle se présente comme un top-level
+  python classique :
+\begin{figure}[!h]
+\includegraphics[width=10cm]{cli_screenshot.png}
+\end{figure}
+\end{itemize}
+
+Le langage permettant de manipuler les outils Sage est un Python avec quelques sucres
+syntaxiques supplémentaires permettant une manipulation plus aisée des
+concepts mathématiques utilisés. Par exemple, pour déclarer l'anneau des
+polynômes de variables x, y et z, à coefficients dans $\mathbb{Q}$ : \\
+\verb|R.<x,y,z> = PolynomialRing(QQ)|
+
+\subsection{Architecture}
+Sage ayant pour objectif de couvrir l'ensemble des besoins en calcul pour
+tous les domaines des Mathématiques, la taille du code est donc assez
+conséquente (un peu plus de 11 milliards de lignes de code sans compter les
+paquets supplémentaires). Cela a été une première difficulté dans la
+réalisation de ce projet. \\
+Le code de Sage s'organise autour d'une hiérarchie de dossiers représentant
+les différents domaines mathématiques : \emph{combinat} pour la combinatoire,
+\emph{algebras} pour l'algèbre, \emph{games} pour la théorie des jeux,
+\emph{probability}, \emph{graphs}, etc.\\
+De plus, la fonctionnalité d'aide de Sage permet d'afficher le fichier source
+d'un objet Sage et son emplacement :
+\begin{sageblock}
+PolynomialRing? #affichera la documentation
+PolynomialRing?? #affichera le fichier source et son emplacement
+\end{sageblock}
+Enfin, toute la documentation et les tests de Sage sont contenus directement dans le code
+source grâce au mécanisme des \emph{docstring} Python : la documentation d'une
+fonction est écrite après son prototype dans le fichier source, par exemple : 
+\begin{verbatim}
+def une_fonction():
+    """
+    Ceci est la docstring de une_fonction
+    une_fonction renvoie 1
+    
+    Test test directement dans la fonction comme dans Sage::
+
+        sage : une_fonction()
+        1
+    """
+
+    return 1
+\end{verbatim}
+Cela permet une plus grande facilité pour la compréhension du code et le maintien à jour.
+
+
+
 
 \subsection{Représentation des séries}
 Lazy, Stream et tout ça, représentation…
