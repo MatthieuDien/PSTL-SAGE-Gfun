@@ -15,11 +15,14 @@
 \usepackage{amssymb}
 \usepackage{txfonts}
 \usepackage[amsmath,thmmarks,thref,hyperref]{ntheorem}
-%\usepackage[all]{xy}
+\usepackage[all]{xy}
 \frenchspacing
 %\usepackage{bbold}
 \usepackage{pifont}
 \usepackage{sagetex}
+\usepackage{listings}
+
+\lstset{language=Python}
 
 \hypersetup{
       backref=true,    
@@ -43,16 +46,19 @@
 encadrés par Antoine Genitrini et Frederic Peschanski }    
 \begin{document}
      
-     \maketitle
+\maketitle
      
 \section{Introduction}
 Là, je raconte le projet, j'explique en gros ce qu'on fait.
+
 \subsection{Quelques bases de combinatoire analytique}
-La combinatoire analytique a pour but de décrire de manière quantitatives des structures combinatoires en utilisant des outils analytiques. Il faut que j'ajoute des trucs ici.
+La combinatoire est une branche des mathématiques qui s'intéresse à l'étude des structures finies ou dénombrables : des objets qui peuvent être créés par un nombre fini de règles. On peut s'intéresser aux propriétés de ces objets combinatoires, mais souvent on voudra les compter. Pour ça la méthode classique utilise des raisonnements par récurrence, souvent compliqués, parfois inefficaces.
+La combinatoire analytique a pour but de décrire de manière quantitatives ces structures combinatoires en utilisant des outils analytiques. La pierre d'angle de théorie est la \textit{fonction génératrice}. Nous commencerons par les définitions de quelques notions de base de la combinatoire analytique.
+
 \begin{definition}
   Une \underline{classe combinatoire} est un ensemble fini ou dénombrable sur lequel est défini une fonction taille qui vérifie les conditions suivantes : 
   \begin{itemize}
-    \item la taille d'un élément est un entier positif ,
+    \item la taille d'un élément est un entier positif,
     \item il y a un nombre fini d'élément de chaque taille.
   \end{itemize}
 \end{definition}
@@ -61,23 +67,131 @@ La combinatoire analytique a pour but de décrire de manière quantitatives des 
 La \underline{suite de comptage} d'une classe combinatoire $\mathcal A$ est la suite $(A_n)_{n \geqslant 0}$ où $A_n$ est le nombre d'objet de taille $n$ dans $\mathcal A$.
 \end{definition}
 
+
 \begin{definition}
   La \underline{série génératrice ordinaire} d'une suite $(A_n)$ est la série entière
   $$A(z) = \sum_{n=0}^{\infty} A_n z^n .$$
   La série génératrice ordinaire d'une classe combinatoire est la série génératrice ordinaire de sa suite de comptage. De manière équivalente, le série génératrice d'une classe combinatoire $\mathcal A$ peut s'écrire sous la forme 
   $$A(z) = \sum_{a \in \mathcal A} z ^{|a|} .$$
 \end{definition}
+Nous attirons l'attention sur le fait qu'une série génératrice ordinaire est vue en tant que série formelle, et non comme une série entière.
 
-Connaître cette série, c'est donc connaître le nombre d'objet de chaque taille de la classe combinatoire étudiée. Pour connaître le nombre d'objet de taille $n$, il faut extraire le $n$-ième coefficient de cette série génératrice. Si on note $f(z)$ la série entière$\sum f_n z^n$, on note $[z^n]f(z)$ l'extraction du coefficient de $z^n$.
 
-exemple partition d'entier
+Souvent, pour dénombrer les objets, on les décompose en éléments plus simples, mais du même type, pour obtenir une équation de récurrence vérifiée par les $A_n$. Cette équation peut-être plus ou moins simple à résoudre.
+L'approche proposée par la combinatoire analytique, repose sur la vision d'une classe combinatoire comme une construction à partir d'autres classes combinatoires. 
+On définit les  constructions admissibles, qui produisent une classe combinatoire. 
+\begin{definition}Soient, $\mathcal A$, $\mathcal B^{1}$,\dots,$\mathcal B^{m}$ des classes combinatoires, et $\Phi$ une construction, 
+$$\mathcal A = \Phi(\mathcal B^{1},\dots,\mathcal B^{m}).$$
+La construction $\Phi$ est admissible si et seulement si la suite de comptage $(A_n)$  de $\mathcal A$ ne dépend que des suites de comptages $(B_n^{1}),\dots, (B_n^{m})$ de $\mathcal B^{1}$,\dots,$\mathcal B^{m}$.
+\end{definition}
+Pour chaque construction admissible $\Phi$, il existe un opérateur $\Psi$, agissant sur les génératrices ordinaires : si
+$$\mathcal A = \Phi(\mathcal B^{1},\dots,\mathcal B^{m}),$$
+alors, 
+$$A(z) = \Psi(B^1(z),\dots, B^m(z)).$$
+L'existence de cet opérateur va nous permettre d'utiliser la décomposition en classes combinatoires élémentaires pour obtenir les séries génératrices ordinaires de classes combinatoires plus compliquées.
+\subsection{Constructions de base}
+Pour définir les constructions de base, on se donne deux classes combinatoires particulières, la classe neutre $\mathcal E$, constituée d'un unique objet de taille nulle et la classe atomique $\mathcal Z$, constituée d'un unique objet de taille 1.
+Leurs séries génératrices sont donc respectivement $E(z)=1$ et $Z(z)=z$.
+
+\subsubsection*{Produit cartésien}
+La construction produit cartésien appliqué à deux classes combinatoires $\mathcal B$ et $\mathcal C$ donne la classe combinatoire 
+$$\mathcal A = \left\{\alpha =(\beta,\gamma)\ |\ \beta \in \mathcal B, \gamma \in\mathcal C\right\}$$
+munie de la fonction taille définie par 
+$$|\alpha|_{\mathcal A} = |\beta|_{\mathcal B} +|\gamma|_{\mathcal C}.$$
+On écrit alors $\mathcal A = \mathcal B \times \mathcal C$.
+En regardant toutes les possibilités de paires, on trouve que la suite de comptage de $A$ est donnée par le produit de convolution des suites de comptage de $B$ et $C$ :
+$$A_n = \sum_{k=0}^n B_k C_{n-k}.$$
+On remarque bien sûr que le produit cartésien est une construction admissible, et on reconnaît dans cette égalité le produit de deux séries entières. Ainsi la série génératrice de $\mathcal A$ est 
+$$A(z) = B(z)\cdot C(z).$$
+
+\subsubsection*{Somme combinatoire}
+La somme combinatoire est définie de manière à avoir les mêmes propriétés que la somme disjointe, mais sans avoir à imposer la disjonction des ensembles : on se donne deux objets neutres distincts, i.e. de taille nulle, $\Box$ et $\Diamond$ et on pose
+$$\mathcal B + \mathcal C \coloneqq (\{\Box\} \times\mathcal B) \cup (\{\Diamond\} \times\mathcal C),$$
+comme $\Box$ et $\Diamond$ sont distincts, le membre de droite est une union disjointe, pour toute classes combinatoires $\mathcal B$ et $\mathcal C$.
+Il y a autant d'objets de taille $n$ dans $\{\Box\} \times\mathcal B)$ et $(\{\Diamond\} \times\mathcal C)$ que dans $\mathcal B$ et $\mathcal C$, et par conséquent, si $\mathcal A = \mathcal B + \mathcal C $, on a 
+$$A_n = B_n + C_n,$$ et ce quel que soit $n$, la somme combinatoire est donc une construction admissible.
+La série génératrice de $\mathcal A$ est 
+$$A(z)=B(z)+C(z).$$
+
+\subsubsection*{Séquence}
+Soit $\mathcal B$ une classe combinatoire, on définit $Seq (\mathcal B)$ comme la somme combinatoire infinie 
+$$Seq (\mathcal B) \coloneqq\{\epsilon\} + \mathcal B + (\mathcal B \times \mathcal B) +(\mathcal B \times \mathcal B \times \mathcal B) + \dots$$
+Ce qui est équivalent à voir la séquence comme l'ensemble des suites d'objets de $\mathcal B$ : 
+$$Seq(\mathcal B) = \left\{ (\beta_1,\dots,\beta_l)\ |\ \beta_i \in \mathcal B,\ l\geqslant 0\right\}.$$
+En combinant les fonctions tailles associées au produit cartésien et à la somme combinatoire, on définit la taille dans $Seq(\mathcal B)$ : 
+$$|(\beta_1,\dots,\beta_l)|_{Seq(\mathcal B)} = |\beta_1|_{\mathcal B}+\dots+|\beta_l|_{\mathcal B}$$
+$Seq(\mathcal B)$ est une classe combinatoire si et seulement si, $\mathcal B$ ne contient pas d'objet de taille nulle. 
+En effet, s'il existe $\beta_0 \in \mathcal B$ de taille nulle, on peut créer une infinité de suites de $\beta_0$, toutes de taille nulle, $Seq(\mathcal B)$ n'est donc pas une classe combinatoire. \\
+Réciproquement, s'il n'existe pas d'objet de taille nulle dans $\mathcal B$, pour tout $n\geqslant 1$, il existe un nombre fini de suites d'entiers dont la somme est $n$, donc un nombre fini d'antécédents de $n$ par la fonction taille de $Seq(\mathcal B)$. Et la suite vide est le seul antécédent de $0$, donc $Seq(\mathcal B)$ est une classe combinatoire, et la séquence est une construction admissible.
+
+Pour calculer la série génératrice de $\mathcal A = Seq(\mathcal B)$, on utilise les propriétés vues avec le produit cartésien et la somme combinatoire : 
+$$A(z) = 1+ B(z)+B(z)\cdot B(z)+B(z)\cdot B(z) \cdot B(z) \dots$$
+$$A(z) = 1 + B(z)+B(z)^2+B(z)^3 + \dots $$
+$$A(z)= \frac{1}{1-B(z)}$$
+
+Il existe d'autres constructions admissibles, 
+
+\subsection{Spécification}
+\begin{definition}
+Une spécification pour un $n-$uplet de classes combinatoires $(\mathcal A_1,\mathcal A_2,\dots,\mathcal A_n)$, est un système de $n$ équations
+$$\left\{
+\begin{array}{l c}
+  \mathcal A_1 =& \Phi_1 (\mathcal A_1,\mathcal A_2,\dots, \mathcal A_n)\\
+  \mathcal A_2 = & \Phi_2 (\mathcal A_1,\mathcal A_2,\dots, \mathcal A_n)\\
+  \vdots & \vdots\\
+\mathcal A_n = & \Phi_n (\mathcal A_1,\mathcal A_2,\dots, \mathcal A_n)\\
+\end{array}
+\right.$$ 
+où $\Phi_i$ est une construction admissible, produite avec les construction de produit cartésien, de la somme combinatoire, ou de la séquence sur les classes $\mathcal A_1,\mathcal A_2,\dots, \mathcal A_n$, $\mathcal E$ et $\mathcal Z$.\end{definition}
+
 \subsection{Fonctions génératrices multivariées}
+Jusque là, on ne considérait que des
+\subsection*{exemple : les arbres binaires-ternaires}
+Un arbre binaire-ternaire est un arbre dont les noeuds internes ont deux ou trois fils : 
+$$
+\begin{array}{c|ccc}
+  \text{taille 1} & \bullet&&\\
+  \hline
+  \text{taille 2} & \varnothing&&\\
+  \hline
+  \text{taille 3} & \xymatrix@R=5pt @C=5pt{& *={\bullet}  \ar@{-}[dl] \ar@{-}[dr] & \\ *={\bullet} & &*={\bullet}}&&\\
+  \hline
+  \text{taille 4} & \xymatrix@R=8pt @C=8pt{&  *={\bullet} \ar@{-}[dr] \ar@{-}[d] \ar@{-}[dl]&\\ *={\bullet}& *={\bullet} & *={\bullet}} &  &\\
+&&&\\
+ \hline 
+ \text{taille 5} & \xymatrix@R=5pt @C=5pt{& *={\bullet} \ar@{-}[dr] \ar@{-}[dl]& &\\ *={\bullet} & & *={\bullet} \ar@{-}[dr] \ar@{-}[dl]& \\  & *={\bullet} & & *={\bullet}} 
+ &\xymatrix@R=5pt @C=5pt{&& *={\bullet} \ar@{-}[dr] \ar@{-}[dl]&\\&*={\bullet}\ar@{-}[dr] \ar@{-}[dl]& & *={\bullet}  \\ *={\bullet} & & *={\bullet} &} & \\
+ \hline
+ \text{taille 6} & \xymatrix@R=8pt @C=8pt{ *={}&& *={\bullet} \ar@{-}[dl] \ar@{-}[d] \ar@{-}[dr]& \\*={} & *={\bullet} \ar@{-}[dl] \ar@{-}[dr] & *={\bullet} & *={\bullet}\\ *={\bullet} & *={}& *={\bullet} & }
+ &\xymatrix@R=8pt @C=8pt{& *={\bullet} \ar@{-}[dl] \ar@{-}[d] \ar@{-}[dr]&\\ *={\bullet}  & *={\bullet}\ar@{-}[dl] \ar@{-}[dr] & *={\bullet}\\ *={\bullet} && *={\bullet} }
+ & \xymatrix@R=8pt @C=8pt{ & *={\bullet} \ar@{-}[dl] \ar@{-}[d] \ar@{-}[dr]& &*={}\\ *={\bullet}  & *={\bullet} & *={\bullet}\ar@{-}[dl] \ar@{-}[dr]&*={} \\  &*={\bullet} & *={}& *={\bullet} }\\
+ & \xymatrix@R=8pt @C=8pt{*={}& & *={\bullet}  \ar@{-}[dl] \ar@{-}[dr] & \\ *={}&*={\bullet}\ar@{-}[dl]\ar@{-}[d]\ar@{-}[dr] &*={} &*={\bullet}\\ *={\bullet}&*={\bullet}&*={\bullet} &}
+ &\xymatrix@R=8pt @C=8pt{& *={\bullet}  \ar@{-}[dl] \ar@{-}[dr] & &*={}\\ *={\bullet} &*={} &*={\bullet}\ar@{-}[dl]\ar@{-}[d]\ar@{-}[dr] &*={}\\& *={\bullet}&*={\bullet}&*={\bullet} }&\\
+\end{array}
+$$
+Un arbre binaire ternaire est soit une feuille $\bullet$, 
+soit un nœud binaire avec deux arbres pendants $\xymatrix@R=5pt @C=5pt{& *={\bullet} \ar@{-}[dl]\ar@{-}[dr]& \\ *={\triangle}&&*={\triangle} } $,
+soit un nœud ternaire avec trois arbres pendants $\xymatrix@R=10pt @C=10pt{& *={\bullet} \ar@{-}[dl]\ar@{-}[dr]\ar@{-}[d]& \\ *={\triangle}&*={\triangle}&*={\triangle} } $
+Si on prend en compte les paramètres suivants :
+$$\left\{
+\begin{array}{l}
+  z : \text{le nombre de feuilles}\\
+  u : \text{le nombre de nœuds binaires}\\
+  v : \text{le nombre de nœuds ternaires,}\\
+\end{array}
+$$
+on obtient la spécification suivante
+$$\mathcal{BT} = \{z\} + \{u\}\cdot\mathcal{BT}^2 + \{v\}\cdot\mathcal{BT}^3, $$
+ce qui en terme de série génératrice donne 
+$$BT(z,u,v) = z+uBT(z,u,v)^2+vBT(z,u,v)^3$$
 
 \section{Sage}
 
 \subsection{Introduction}
+
+\subsubsection{Présentation}
 Sage est un logiciel libre (sous licence GPL) de calcul formel, symbolique et
-numérique. Il est principalement écrit en C/C++ et Python/Cython/Pyrex. Le but
+numérique \cite{sage}. Il est principalement écrit en C/C++ et Python/Cython/Pyrex. Le but
 du projet Sage est de fournir une alternative aux solutions de calculs
 propriétaires comme Mapple, Mathematica, Matlab ... \\
 Historiquement Sage est un regroupement de différents projets libres autour
@@ -88,26 +202,36 @@ acquérir son indépendance, donc améliorée la cohérence de l'architecture,
 du le calendrier de release et faciliter ainsi le développement de nouvelles
 fonctionnalités et la maintenance d'ancienne.\\
 Dans Sage, deux interfaces sont disponibles :
+
+\noindent\begin{minipage}{\linewidth}
 \begin{itemize}
 \item L'interface bloc-note (ou notebook). Elle se présente sous la forme
  d'une interface embarquée dans un navigateur web, comme ceci :
-\begin{figure}[h]
+\vspace{5mm}
+%\begin{figure}[!h]
+\begin{center}
 \includegraphics[width=17cm]{notebook_screenshot.png}
-\end{figure}
+\end{center}
+%\end{figure}
 \item L'interface ligne de commande. Elle se présente comme un top-level
   python classique :
-\begin{figure}[!h]
+\vspace{5mm}
+%\begin{figure}[!h]
+\begin{center}
 \includegraphics[width=10cm]{cli_screenshot.png}
-\end{figure}
+%\end{figure}
+\end{center}
 \end{itemize}
+\end{minipage}
 
+\vspace{1cm}
 Le langage permettant de manipuler les outils Sage est un Python avec quelques sucres
 syntaxiques supplémentaires permettant une manipulation plus aisée des
 concepts mathématiques utilisés. Par exemple, pour déclarer l'anneau des
 polynômes de variables x, y et z, à coefficients dans $\mathbb{Q}$ : \\
 \verb|R.<x,y,z> = PolynomialRing(QQ)|
 
-\subsection{Architecture}
+\subsubsection{Architecture}
 Sage ayant pour objectif de couvrir l'ensemble des besoins en calcul pour
 tous les domaines des Mathématiques, la taille du code est donc assez
 conséquente (un peu plus de 11 milliards de lignes de code sans compter les
@@ -125,8 +249,10 @@ PolynomialRing?? #affichera le fichier source et son emplacement
 \end{sageblock}
 Enfin, toute la documentation et les tests de Sage sont contenus directement dans le code
 source grâce au mécanisme des \emph{docstring} Python : la documentation d'une
-fonction est écrite après son prototype dans le fichier source, par exemple : 
-\begin{verbatim}
+fonction est écrite après son prototype dans le fichier source, par exemple
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}
 def une_fonction():
     """
     Ceci est la docstring de une_fonction
@@ -139,16 +265,81 @@ def une_fonction():
     """
 
     return 1
-\end{verbatim}
-Cela permet une plus grande facilité pour la compréhension du code et le maintien à jour.
+\end{lstlisting}
+\end{minipage}
+Cela permet une plus grande facilité pour la compréhension du code et le
+maintien à jour du code comme de la documentation et des tests.
 
 
+\subsection{Implémentation}
+
+\subsubsection{LazyPowerSeries}
+Sage contenait déjà une implémentation des séries génératrices monovariées
+(basée sur le travail fait sur Aldor
+\cite{Hemmecke+Rubey:Aldor-Combinat:2006}) sous la forme d'une classe
+Python. L'implémentation se présente donc sous la forme de deux classes
+héritant de \verb|LazyPowerSeriesRing| et \verb|LazyPowerSeries|. Les
+opérations supportées pour ces séries sont l'addition, la multiplication, la
+composition, la dérivation et l'intégration (la primitive ne fait). Nous
+supportons l'ensemble de ces opérations (exceptée la primitivation) et nous y
+avons ajouté la séquence.\\
+De plus, comme son nom l'indique, l'implémentation existante était paresseuse, ce qui est
+nécessaire car les objets manipulés sont des séries donc potentiellement non
+finies (et c'est généralement le cas). Nous avons évidemment repris ce style
+de programmation. Cette \emph{paresse} est obtenu en utilisant le concept de
+générateur python, que nous présenterons avant de présenter les opérations
+implémentées.
+
+\subsubsection{Générateurs}
+Les générateurs Python \cite{genpython}, sont un mécanisme permettant de créer
+des objets itérables. Ils sont déclarés sous forme de fonction classique
+contenant le mot clé \verb|yield|. A chaque appel de la méthode \verb|next|
+associé à ce générateur, le corps de la \emph{fonction} est éxécuté jusqu'à
+rencontrer un \verb|yield|, et l'argument donné à \verb|yield| est retourné
+par \verb|next| et l'éxécution du corps ce stoppe. Au prochain appel de
+\verb|next|, l'éxécution du corps reprend jusqu'au prochain \verb|yield|. \\
+Par exemple, si nous voulions itérer sur l'ensemble des entiers naturels :
+
+\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}
+def integers_definition():
+    i = 0
+    while True :
+        yield i
+        i += 1
+
+integers = integers_definition()
+
+while True :
+    n = integers.next()
+    if n % 2 == 0:
+        print("%d est pair"%n)
+    else :
+        print("%d est impair"%n)
+
+# ou
+
+for n in integers_definition():
+    n = integers.next()
+    if n % 2 == 0:
+        print("%d est pair"%n)
+    else :
+        print("%d est impair"%n)
+\end{lstlisting}
+\end{minipage}
 
 
-\subsection{Représentation des séries}
+\subsubsection{Représentation des séries}
 Lazy, Stream et tout ça, représentation…
 \subsection{Opérateurs}
 \subsubsection{Addition}
 \subsubsection{Multiplication}
 \subsubsection{Séquence}
+
+
+\bibliographystyle{alpha}
+\bibliography{biblio}
+
+
+
 \end{document}
