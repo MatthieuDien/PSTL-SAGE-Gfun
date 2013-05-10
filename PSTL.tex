@@ -22,7 +22,13 @@
 \usepackage{sagetex}
 \usepackage{listings}
 
-\lstset{language=Python}
+\usepackage{geometry}
+\geometry{hmargin=1.5cm,vmargin=2cm}
+
+\lstset{language=Python, breaklines=true, basicstyle=\ttfamily\small}
+
+
+
 
 \hypersetup{
       backref=true,    
@@ -193,59 +199,72 @@ $$BT(z,u,v) = z+uBT(z,u,v)^2+vBT(z,u,v)^3$$
 Sage est un logiciel libre (sous licence GPL) de calcul formel, symbolique et
 numérique \cite{sage}. Il est principalement écrit en C/C++ et Python/Cython/Pyrex. Le but
 du projet Sage est de fournir une alternative aux solutions de calculs
-propriétaires comme Mapple, Mathematica, Matlab ... \\
+propriétaires comme Mapple, Mathematica, Matlab ...
+
+
 Historiquement Sage est un regroupement de différents projets libres autour
 d'une interface Python unifiée, pour faciliter les traitements entre ces
 \emph{briques de base} (Singular, Maxima, GP/PARI, GAP). Mais de plus en plus
 le projet se tourne vers le développement de ses propres paquetages pour
 acquérir son indépendance, donc améliorée la cohérence de l'architecture, 
 du le calendrier de release et faciliter ainsi le développement de nouvelles
-fonctionnalités et la maintenance d'ancienne.\\
-Dans Sage, deux interfaces sont disponibles :
+fonctionnalités et la maintenance d'ancienne.
 
-\noindent\begin{minipage}{\linewidth}
+
+Dans Sage, deux interfaces sont disponibles :
+\vspace{3mm}
+
 \begin{itemize}
+\noindent\begin{minipage}{\linewidth}
 \item L'interface bloc-note (ou notebook). Elle se présente sous la forme
  d'une interface embarquée dans un navigateur web, comme ceci :
-\vspace{5mm}
+\vspace{3mm}
 %\begin{figure}[!h]
 \begin{center}
 \includegraphics[width=17cm]{notebook_screenshot.png}
 \end{center}
 %\end{figure}
+\end{minipage}
+\noindent\begin{minipage}{\linewidth}
 \item L'interface ligne de commande. Elle se présente comme un top-level
   python classique :
-\vspace{5mm}
+\vspace{3mm}
 %\begin{figure}[!h]
 \begin{center}
 \includegraphics[width=10cm]{cli_screenshot.png}
 %\end{figure}
 \end{center}
-\end{itemize}
 \end{minipage}
+\end{itemize}
 
-\vspace{1cm}
+
+\vspace{3mm}
 Le langage permettant de manipuler les outils Sage est un Python avec quelques sucres
 syntaxiques supplémentaires permettant une manipulation plus aisée des
 concepts mathématiques utilisés. Par exemple, pour déclarer l'anneau des
-polynômes de variables x, y et z, à coefficients dans $\mathbb{Q}$ : \\
+polynômes de variables x, y et z, à coefficients dans $\mathbb{Q}$ :
 \verb|R.<x,y,z> = PolynomialRing(QQ)|
+
 
 \subsubsection{Architecture}
 Sage ayant pour objectif de couvrir l'ensemble des besoins en calcul pour
 tous les domaines des Mathématiques, la taille du code est donc assez
 conséquente (un peu plus de 11 milliards de lignes de code sans compter les
 paquets supplémentaires). Cela a été une première difficulté dans la
-réalisation de ce projet. \\
+réalisation de ce projet.
+
+
 Le code de Sage s'organise autour d'une hiérarchie de dossiers représentant
 les différents domaines mathématiques : \emph{combinat} pour la combinatoire,
 \emph{algebras} pour l'algèbre, \emph{games} pour la théorie des jeux,
-\emph{probability}, \emph{graphs}, etc.\\
+\emph{probability}, \emph{graphs}, etc.
+
+
 De plus, la fonctionnalité d'aide de Sage permet d'afficher le fichier source
 d'un objet Sage et son emplacement :
 \begin{sageblock}
-PolynomialRing? #affichera la documentation
-PolynomialRing?? #affichera le fichier source et son emplacement
+PolynomialRing?     #affichera la documentation
+PolynomialRing??     #affichera le fichier source et son emplacement
 \end{sageblock}
 Enfin, toute la documentation et les tests de Sage sont contenus directement dans le code
 source grâce au mécanisme des \emph{docstring} Python : la documentation d'une
@@ -278,11 +297,18 @@ Sage contenait déjà une implémentation des séries génératrices monovariée
 (basée sur le travail fait sur Aldor
 \cite{Hemmecke+Rubey:Aldor-Combinat:2006}) sous la forme d'une classe
 Python. L'implémentation se présente donc sous la forme de deux classes
+\verb|FormalMultivariatePowerSeriesRing| et \verb|FormalMultivariatePowerSeries|
 héritant de \verb|LazyPowerSeriesRing| et \verb|LazyPowerSeries|. Les
-opérations supportées pour ces séries sont l'addition, la multiplication, la
-composition, la dérivation et l'intégration (la primitive ne fait). Nous
-supportons l'ensemble de ces opérations (exceptée la primitivation) et nous y
-avons ajouté la séquence.\\
+opérations supportées par les séries existantes sont l'addition, la multiplication, la
+composition, la dérivation et l'intégration (la primitive ne fait). Pour nos
+séries nous supportons l'ensemble de ces opérations, exceptée la
+primitivation, et nous y avons ajouté la séquence.\\
+Les classes \verb|FormalMultivariatePowerSeriesRing| et
+\verb|LazyPowerSeriesRing| sont nécessaires à Sage et permettent de garantir
+certaines fonctonalités communes à tous les anneaux notamment les sucres
+syntaxiques vus précédemment.
+
+
 De plus, comme son nom l'indique, l'implémentation existante était paresseuse, ce qui est
 nécessaire car les objets manipulés sont des séries donc potentiellement non
 finies (et c'est généralement le cas). Nous avons évidemment repris ce style
@@ -297,7 +323,9 @@ contenant le mot clé \verb|yield|. A chaque appel de la méthode \verb|next|
 associé à ce générateur, le corps de la \emph{fonction} est éxécuté jusqu'à
 rencontrer un \verb|yield|, et l'argument donné à \verb|yield| est retourné
 par \verb|next| et l'éxécution du corps ce stoppe. Au prochain appel de
-\verb|next|, l'éxécution du corps reprend jusqu'au prochain \verb|yield|. \\
+\verb|next|, l'éxécution du corps reprend jusqu'au prochain \verb|yield|.
+
+
 Par exemple, si nous voulions itérer sur l'ensemble des entiers naturels :
 
 \noindent\begin{minipage}{\linewidth}
@@ -328,16 +356,163 @@ for n in integers_definition():
 \end{lstlisting}
 \end{minipage}
 
+L'avantage des générateurs est qu'ils permettent d'effectuer les calculs que
+quand cela est nécessaire, c'est ce qui permet d'obtenir la \emph{paresse} :
+chaque coefficient de la série ne sera calculer que quand il sera nécessaire.
 
 \subsubsection{Représentation des séries}
-Lazy, Stream et tout ça, représentation…
+
+Dans l'implémentation existante, les séries monovariées sont représentées par
+des \emph{stream}. Un \emph{stream} peut être vu comme une liste infinie où
+les éléments stockés sont les éléments dont on a explicitement demandé la
+valeur, qui ont été calculés. Les coefficients de la série sont rangés
+dans l'ordre croissant de l'ordre de leur monôme associé. 
+
+
+Par exemple, si nous définissons $F$ comme étant la série génératrice
+monovariée dont les coefficients sont les nombres de Fibonacci (définit par
+$f_0=1,\ f_1=1,\ f_{n+2} = f_{n+1} + f_n$), alors nous pouvons illustrer sa
+représentation dans le tableau suivant :
+
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+entrée & sortie  &  mémoire \\
+\hline
+\verb|F| & \verb|Uninitialized lazy power series| & \verb|[]| \\
+\verb|F.coefficients(2); F| & \verb|1+x+O(x^2)| & \verb|[1,1]| \\
+\verb|F.coefficients(5); F| & \verb|1 + x + 2*x^2 + 3*x^3 + 5*x^4 + O(x^5)| &
+\verb|[1, 1, 2, 3, 5]| \\
+\hline
+\end{tabular}
+\end{center}
+
+On voit alors comment sont manipulées les séries : le générateur permet le
+calcul des coefficients tandis que le \emph{stream} permet le stockage des
+coefficients et la demande de nouveaux coefficients. C'est ce fonctionnement
+que nous avons garder dans le cas des séries multivariées.
+
+\vspace{3mm}
+
+Dans le cas des séries génératrices multivariées, le problème est comment
+ranger nos coefficients dans un \emph{stream} ? La première idée est de garder
+un ordre sur les monômes de plusieurs variables en prenant la somme de l'ordre
+de chaque variable : $x^4 y^2 z^8 < x^{11} y \ (2+4+8 < 11+1)$. Ainsi chaque
+case du stream contiendra une liste de coefficients de même ordre. Il faut
+aussi garder l'association entre chaque coefficient et son monôme, on stockera
+donc des couples coefficient/monôme. Les monômes seront représentés par
+des listes d'entier contenant les puissances de chaque variable (dans un ordre
+fixé), par exemple : $x^iy^jz^k \approx \verb|[i,j,k]|$.
+
+
+Ainsi sur l'exemple des arbres binaires-ternaires de la première partie
+($BT(z,u,v) = z+uBT(z,u,v)^2+vBT(z,u,v)^3$)
+on a le tableau suivant :
+
+
+\begin{center}
+ \begin{tabular}{|c|c|l|}
+\hline
+entrée & sortie  &  mémoire \\
+\hline
+{\small \verb|F|}
+&
+{\small \verb|Uninitialized formal multivariate power series|}
+&
+\begin{lstlisting}
+[]
+\end{lstlisting}
+ \\
+\hline
+%\begin{lstlisting}
+{\small \verb|F.coefficients(2); F|}
+%\end{lstlisting}
+& $z + \dots$ &
+\begin{lstlisting}
+[[],
+ [(1,[1,0,0])]]
+\end{lstlisting} \\
+\hline
+%\begin{lstlisting}
+{\small \verb|F.coefficients(5); F|}
+%\end{lstlisting}
+& $z + z^2*u + z^3*v + 2*z^3*u^2 + 5*z^4*u*v + \dots$ &
+\begin{lstlisting}
+[[],
+ [(1, [1, 0, 0])],
+ [],
+ [(1, [2, 1, 0])],
+ [(1, [3, 0, 1])],
+ [(2, [3, 2, 0])],
+ [(5, [4, 1, 1])]]
+\end{lstlisting}
+\\
+\hline
+\end{tabular}
+On remarquera qu'une liste vide correspond à un terme nul.
+\end{center}
+
+Maintenant la représentation de nos séries et le concept de générateur
+expliqués passons aux détails du mécanisme.
+
 \subsection{Opérateurs}
+
+Chaque opérateur correspond à deux méthodes de la classe
+\verb|FormalMultivariatePowerSeries|. Une première méthode qui est en fait un
+générateur et qui calculera les coefficients de la série obtenue. Une deuxième
+méthode qui à partir du générateur créée une nouvelle instance pour la série
+calculée, cette méthode est totalement héritée de \verb|LazyPowerSeries|.\\
+Les opérateurs ont été implémentés de façon naïve, ce qui n'a pas empêché des
+difficultés sur la pluplart d'entre eux.
+
 \subsubsection{Addition}
+
+Pour l'addition, l'algorithme est simple et correspond plus ou moins à une
+concaténation de deux listes :
+
+\begin{algorithm}
+\SetKw{Yield}{yield}
+\SetKw{Break}{break}
+
+\KwIn{two series A and B}
+\BlankLine
+$ i \leftarrow 0 $ \;
+\While{True}{
+  new\_list $ \leftarrow $ A.stream[i].copy()\;
+  \ForEach{(coeff,monom) in B.stream[i] }{
+    \ForEach{(coeff',monom') in new\_list }{
+      \If{monom == monom' }{
+        \eIf{coeff+coeff'== 0 }{
+          delete (coeff',monom') of new\_list\; 
+          \Break \;
+        }{
+          replace (coeff',monom') by (coeff'+coeff,monmo') in new\_list\;
+          \Break \;
+        }
+      }
+      append (coeff,monom) to new\_list\;
+    }
+  }
+  \Yield new\_list \;
+}
+
+
+\caption{add two series}
+\end{algorithm}
+
+
 \subsubsection{Multiplication}
+
+
+
+
 \subsubsection{Séquence}
+\subsubsection{Composition}
+\subsubsection{Dérivation}
 
 
-\bibliographystyle{alpha}
+
+
 \bibliography{biblio}
 
 
