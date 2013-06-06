@@ -7,7 +7,7 @@
 
 \usepackage[french]{babel}
 
-\usepackage[applemac]{inputenc}
+\usepackage[utf8]{inputenc}
 
 \usepackage{times}
 \usepackage[T1]{fontenc}
@@ -24,22 +24,27 @@
 \usepackage{color}
 \usepackage{multicol}
 \usepackage{multirow}
-
-\usepackage{dot2texi}
 \usepackage{qtree}
+\usepackage{dot2texi}
+\usepackage{listings}
+\lstset{%
+language=python,
+basicstyle=\scriptsize\ttfamily
+}
+
 
 \hypersetup{
      backref=true,    %permet d'ajouter des liens dans...
      pagebackref=true,%...les bibliographies
      hyperindex=true, %ajoute des liens dans les index.
      colorlinks=true, %colorise les liens
-     breaklinks=true, %permet le retour ‚àö‚Ä† la ligne dans les liens trop longs
+     breaklinks=true, %permet le retour ‚Äö√†√∂‚Äö√Ñ‚Ä† la ligne dans les liens trop longs
      urlcolor= blue,  %couleur des hyperliens
      linkcolor= , %couleur des liens internes
-     bookmarks=true,  %cr‚àö¬©‚àö¬© des signets pour Acrobat
-     bookmarksopen=true,            %si les signets Acrobat sont cr‚àö¬©‚àö¬©s,
-                                    %les afficher compl‚àö¬Ætement.
-     pdftitle={Présentation colour numbers of complete graphs}, %informations apparaissant dans
+     bookmarks=true,  %cr‚Äö√†√∂¬¨¬©‚Äö√†√∂¬¨¬© des signets pour Acrobat
+     bookmarksopen=true,            %si les signets Acrobat sont cr‚Äö√†√∂¬¨¬©‚Äö√†√∂¬¨¬©s,
+                                    %les afficher compl‚Äö√†√∂¬¨√Ütement.
+     pdftitle={Pr√©sentation colour numbers of complete graphs}, %informations apparaissant dans
      pdfauthor={Marguerite Zamansky},     %dans les informations du document
      }
 
@@ -53,7 +58,7 @@
 {Matthieu Dien \and Marguerite Zamansky}
 
 \institute
-{Université Pierre et Marie Curie}
+{Universit√© Pierre et Marie Curie}
 
 \date{\today}
 
@@ -72,9 +77,9 @@
 
 \begin{frame}{Objectifs}
 \begin{itemize}
-\item Fournir un outil de calcul symbolique pour des séries multivariées,
-\item de préférence libre :
-\item offrir une alternative à Mapple et porter les fonctionnalités de Gfun vers Sage.
+\item Fournir un outil de calcul symbolique pour des s√©ries multivari√©es,
+\item de pr√©f√©rence libre :
+\item offrir une alternative √† Mapple et porter les fonctionnalit√©s de Gfun vers Sage.
 \end{itemize}
 \end{frame}
 
@@ -86,36 +91,21 @@
 \end{figure}
 
 \begin{itemize}
-\item logiciel libre de calcul formel et num\'erique
-\pause
-\item regroupe des outils déjà connus et éprouvés (GP/PARI, GAP, Singular, Maxima)
-\pause
+\item logiciel libre de calcul formel num\'erique et symbolique
+\item regroupe des outils d√©j√† connus et √©prouv√©s (GP/PARI, GAP, Singular, Maxima)
 \item et ses propres paquets (combinat, rings, matrix ...)
-\pause
-\item le tout interfacé par un top-level Python
+\item le tout interfac√© par un top-level Python
 \end{itemize}
 
 \end{frame}
 \section{Combinatoire analytique}
-%\begin{frame}{Définitions}
-%
-%\begin{block}{Classe Combinatoire}
-%Une classe combinatoire $\mathcal{A}$ est un ensemble muni d'une application taille $ | \cdot | : \mathcal{A} -> \mathbb{N} $
-%tel que $$ \forall n \in \mathbb{N} , \{ a \in \mathcal{A} , |a| = n \} \text{ est fini} $$
-%\end{block}
-%
-%\begin{block}{Paramètre Scalaire}
-%Un paramètre scalaire $\chi$  de $\mathcal{A}$  est une fonction surjective de $\mathcal{A}$ dans $\mathbb{N}$
-%\end{block}
-%
-%\end{frame}
-\begin{frame}{Définitions}
 
-\begin{block}{Série génératrice multivariée}
-Une série génératrice $A$ associée à une classe combinatoire $\mathcal{A}$ :%s et $k$ paramètres scalaires $\chi_j$ : 
+\begin{frame}{D√©finitions}
+\begin{block}{S√©rie g√©n√©ratrice multivari√©e}
+Une s√©rie g√©n√©ratrice $A$ associ√©e √† une classe combinatoire $\mathcal{A}$ :%s et $k$ param√®tres scalaires $\chi_j$ : 
 $$ A(X_1, \ldots, X_k) = \sum_{i_1, \ldots ,i_k \ge 0}^{+\infty} a_{i_1, \ldots , i_k} \ X_1^{i_1} \cdots X_k^{i_k} $$
-permet de compter le nombre d'élément de $\mathcal{A}$. %: $a_{i_1, \ldots , i_k} = \mathrm{Card}( e \in \mathcal{A}, \  \chi_j(e)=i_j, \ \forall j \in \llbracket 1 , k \rrbracket )$
-\note{On utilise des séries formelles, on n'a pas besoin d'avoir un rayon de convergence non nul, plus l'infini se traduit par un lazy}
+permet de compter le nombre d'√©l√©ment de $\mathcal{A}$. %: $a_{i_1, \ldots , i_k} = \mathrm{Card}( e \in \mathcal{A}, \  \chi_j(e)=i_j, \ \forall j \in \llbracket 1 , k \rrbracket )$
+\note{On utilise des s√©ries formelles, on n'a pas besoin d'avoir un rayon de convergence non nul, plus l'infini se traduit par un lazy}
 \end{block}
 
 \end{frame}
@@ -123,58 +113,49 @@ permet de compter le nombre d'élément de $\mathcal{A}$. %: $a_{i_1, \ldots , i_k
 
 \begin{frame}{S\'eries G\'en\'eratrices Multivari\'ees}{Exemple}
 
-%TO DO : dessins
-\begin{tabular}{|c|c|}
-  \hline
-  \begin{
-  \hline 
-\end{tabular}
+\centering
+Arbres binaires-ternaires :
+$$\mathcal{ABT} = \{z\} \cdot \{w\} + \{z\} \cdot
+\{u\} \cdot \mathcal{ABT}^2 + \{z\} \cdot \{v\} \cdot \mathcal{ABT}^3$$
 
 
-  
-Arbres binaire-ternaire : 
-$$ ABT(z,u,v,w) = z \cdot w \ + \ u \cdot w \cdot ABT^2(z,u,v,w) \ + \  v \cdot w \cdot ABT^3(z,u,v,w) $$
+\includegraphics[scale=0.3]{abttree.pdf}
 
-\begin{description}
-\item[z] : les feuilles
-\item[u] : les n\oe{}uds binaires
-\item[v] : les n\oe{}uds ternaires
-\item[w] : la taille totale
-\end{description}
 
-\note{u,v,z,w, sont dépendants ou indépendants, on s'en fout}
-\note{On ne sait pas forcément résoudre les équations fonctionnelles}
 \end{frame}
 
-%\begin{frame}{S\'eries G\'en\'eratrices Multivari\'ees}{Exemple (2)}
-%
-%\begin{description}
-%\item[Arbre de Catalan] : un arbre général (enraciné et planaire)
-%\item[Longueur de cheminement] : somme des distances entre chaque noeud et la racine d'un arbre
-%\end{description}
-%
-%\pause
-%
-%\bigskip
-%
-%Longueur de cheminement d'un arbre de Catalan :
-%$$ AG(z,u) = z \cdot SEQ(AG(zu,u)) $$
-%\begin{description}
-%\item[z] : le nombre de n\oe{}uds
-%\item[u] : longueur de cheminement
-%\end{description}
-%
-%
-%
-%\end{frame}
-\section{Implémentation}
+\begin{frame}{Exemple}
+\begin{center}
+\footnotesize{\begin{tabular}{c|c}
+$ABT(z,u,v,w) =$ & \\
+\hline
+$z \cdot w \ + $ & $z\cdot w$ \\
+ & \\
+$z^3 \cdot u \cdot w^2 \ +$ & \Tree [.$z\cdot u$ $z\cdot w$ $z\cdot w$ ] \\
+ & \\
+$z^4 \cdot v \cdot w^3 \ +$ & \Tree [.$z\cdot v$ $z\cdot w$ $z\cdot w$ $z\cdot
+  w$ ]\\
+ & \\
+$2 \cdot z^5 \cdot u^2 \cdot w^3 \ +$ & 
+\Tree [.$z\cdot u$ [.$z\cdot u$ $z\cdot w$ $z\cdot w$ ] $z\cdot w$ ]
+\hspace{0.2cm}
+\Tree [.$z\cdot u$ $z\cdot w$ [.$z\cdot u$ $z\cdot w$ $z\cdot w$ ] ] \\
+% & \\
+$ \ldots $ & $ \ldots $\\
+\end{tabular}
+}
+\end{center}
+\end{frame}
+
+
+
+\section{Impl√©mentation}
+
 \begin{frame}{Impl\'ementation}
-
-
-\begin{block}{Difficultés}
+\begin{block}{Difficult√©s}
 \begin{itemize}
-\item Représenter les séries formelles en mémoire
-\item S'intégrer à un projet de grande envergure
+\item Repr√©senter les s√©ries formelles en m√©moire
+\item S'int√©grer √† un projet de grande envergure
 \end{itemize}
 \end{block}
 \pause
@@ -182,28 +163,107 @@ $$ ABT(z,u,v,w) = z \cdot w \ + \ u \cdot w \cdot ABT^2(z,u,v,w) \ + \  v \cdot 
 \begin{block}{Solutions}
 \begin{itemize}
 \item Utilisation de streams (programmation paresseuse).
-\item Itérateurs et générateurs python
+\item G√©n√©rateurs python
 \end{itemize}
 \end{block}
-%\includegraphics[]{unpetitdessindestream.pdf}
 \end{frame}
 
-\begin{frame}{Démonstration}{Exemple}
-\begin{block}{sage block}
-La sp\'ecification
-calcul des coefficients
+\begin{frame}[containsverbatim]{G√©n√©rateurs Python}
+\begin{block}{}
+\begin{itemize}
+\item Permet de cr√©er des objets it√©rables
+\item \texttt{yield}
+\end{itemize}
+\end{block}
+\bigskip
+\begin{block}{exemple : it√©rer sur les entiers}
+  \begin{center}
+    \begin{lstlisting}
+def integers_definition():
+    i = 0
+    while True :
+        yield i
+        i += 1
+
+for n in integers_definition():
+    if n % 2 == 0:
+        print("%d est pair"%n)
+    else :
+        print("%d est impair"%n)
+    \end{lstlisting}
+  \end{center}
+\end{block}
+\end{frame}  
+
+\begin{frame}[containsverbatim]{Repr√©sentation}
+ \small{Un stream de listes de couples form√©s d'un entier et d'un $n$-uplet.}
+ 
+\begin{center}
+\tiny{ \begin{tabular}{|c|l|}
+\hline
+entr√©e  &  m√©moire \\
+\hline
+\texttt{F}
+&
+\begin{lstlisting}
+[]
+\end{lstlisting}
+ \\
+\hline
+\texttt{F.coefficients(2); F}
+&
+\begin{lstlisting}
+[[], 
+ [],
+ [(1,[0,0,1,1])]]
+\end{lstlisting} \\
+\hline
+\texttt{F.coefficients(14); F}
+&
+\begin{lstlisting}
+[[], 
+ [],
+ [(1,[0,0,1,1])],
+ [], 
+ [],
+ [],
+ [(1,[1,0,2,3])],
+ [],
+ [(2,[0,1,3,4])],
+ [],
+ [(2,[2,0,3,5])],
+ [],
+ [(5,[1,1,4,6])],
+ [],
+ [(5,[3,0,4,7]),
+  (3,[0,2,5,7])]]
+\end{lstlisting}
+\\
+\hline
+\end{tabular}}
+\end{center}
+\end{frame}
+  
+\begin{frame}{D√©monstration}{Arbres binaires-ternaires}
+\begin{block}{Ce qu'on √©crit dans Sage,}
+\includegraphics[width=9cm]{binterspec}
+\end{block}
+\pause
+\bigskip
+\begin{block}{le r√©sultat qu'on obtient.}
+  \includegraphics[width=9cm]{binterres}
 \end{block}
 \end{frame}
 
 \begin{frame}{Conclusion}
-\begin{block}{Opérateurs implémentés}
+\begin{block}{Op√©rateurs impl√©ment√©s}
 \begin{itemize}
 \item Addition
 \item Produit
-\item Séquence
-\item Dérivée
+\item S√©quence
+\item D√©riv√©e
 \item Composition
-\item Cast en polynôme
+\item Cast en polyn√¥me
 \end{itemize}
 \end{block}
 \pause
@@ -216,21 +276,11 @@ calcul des coefficients
 \end{frame}
 
 \begin{frame}{Perspectives}
-%TO DO
 Continuer l'impl\'ementation pour avoir les fonctionnalit\'es disponibles dans Gfun :
 \begin{itemize}
-\item algorithme de Takayama
-\item les algos d'Antoine
+\item comme les algorithmes \textit{algfuntoalgeq, algeqtodiffeq, diffeqtorec}
+\item Sage days, du 17 au 21 juin
 \end{itemize}
 \end{frame}
-
-%\begin{frame}{}
-%Merci \`a Antoine Genitrini et Fr\'ed\'eric Peschanski
-%\bigskip
-%
-%\textit{\url {www.sagemath.org}}
-%\bigskip
-%
-%Analytic Combinatorics, Philippe Flajolet et Robert Sedgewick
-%\end{frame}
 \end{document}
+  

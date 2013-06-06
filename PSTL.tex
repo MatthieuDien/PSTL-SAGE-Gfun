@@ -1,11 +1,12 @@
-\documentclass[12pt]{article}
+\documentclass[12pt]{report}
 \usepackage[utf8]{inputenc}
 \usepackage[french]{babel}
 \usepackage[T1]{fontenc}                      
+\usepackage{geometry}
+\geometry{hmargin=1.5cm, vmargin=2cm}
 
 \usepackage{array}
 \usepackage{rotating}
-\usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{hyperref}
 %\usepackage{dsfont}
@@ -22,13 +23,7 @@
 \usepackage{sagetex}
 \usepackage{listings}
 
-\usepackage{geometry}
-\geometry{hmargin=1.5cm,vmargin=2cm}
-
-\lstset{language=Python, breaklines=true, basicstyle=\ttfamily\small}
-
-
-
+\lstset{language=Python}
 
 \hypersetup{
       backref=true,    
@@ -46,6 +41,7 @@
      }
      
 \newtheorem*{definition}{Définition}
+\newcommand{\fraction}[2]{\begin{array}{c} #1 \\ \hline #2 \end{array}}
 
 \title{Outils de combinatoire analytique en Sage}
 \author{Matthieu Dien, Marguerite Zamansky\\
@@ -53,24 +49,44 @@ encadrés par Antoine Genitrini et Frederic Peschanski }
 \begin{document}
      
 \maketitle
-     
-\section{Introduction}
-Là, je raconte le projet, j'explique en gros ce qu'on fait.
+\tableofcontents
+\chapter*{Introduction}
+La combinatoire analytique est un domaine des mathématiques utilisée en
+informatique notamment pour calculer des complexités d'algorithmes, générer des données
+aléatoires ... Actuellement, il existe peu de logiciels permettant
+de travailler avec cet outil mathématique et la plupart sont
+propriétaires. C'est notamment le cas de Maple pour lequel il existe une
+librairie : Gfun. L'objectif de ce projet était donc d'étudier le portage de
+Gfun pour Sage, un logiciel libre de calcul formel, symbolique et numérique,
+puis d'en réaliser un prototype.
+Un autre objectif était notamment de généraliser le fonctionnement de Gfun qui
+ne peut travailler qu'avec une seule variable alors que la plupart des
+problèmes actuels sont de plusieurs variables.\\
+Dans un premier temps nous reviendrons sur quelques rappels mathématiques de
+ce qu'est la combinatoire analytique et nous présenterons quelques exemples de
+problèmes à une variable et à plusieurs variables.
+Dans un second temps nous étudierons les différents moyens techniques
+nécessaires à la réalisation de l'implémentation puis son fonctionnement pour
+finir sur une description des algorithmes utilisés.
+Enfin, nous concluerons en présentant l'ensemble du travail accompli et celui
+qu'il reste à faire pour obtenir une version au moins aussi complète que Gfun.
 
-\subsection{Quelques bases de combinatoire analytique}
+\chapter{Combinatoire analytique}
+
+\section{Quelques bases de combinatoire analytique}
 La combinatoire est une branche des mathématiques qui s'intéresse à l'étude des structures finies ou dénombrables : des objets qui peuvent être créés par un nombre fini de règles. On peut s'intéresser aux propriétés de ces objets combinatoires, mais souvent on voudra les compter. Pour ça la méthode classique utilise des raisonnements par récurrence, souvent compliqués, parfois inefficaces.
-La combinatoire analytique a pour but de décrire de manière quantitatives ces structures combinatoires en utilisant des outils analytiques. La pierre d'angle de théorie est la \textit{fonction génératrice}. Nous commencerons par les définitions de quelques notions de base de la combinatoire analytique.
+La combinatoire analytique a pour but de décrire de manière quantitatives ces structures combinatoires en utilisant des outils analytiques. La pierre d'angle de cette théorie est la \textit{fonction génératrice}. Nous commencerons par donner les définitions de quelques notions de base de la combinatoire analytique.
 
 \begin{definition}
   Une \underline{classe combinatoire} est un ensemble fini ou dénombrable sur lequel est défini une fonction taille qui vérifie les conditions suivantes : 
   \begin{itemize}
     \item la taille d'un élément est un entier positif,
-    \item il y a un nombre fini d'élément de chaque taille.
+    \item il y a un nombre fini d'éléments de chaque taille.
   \end{itemize}
 \end{definition}
 
 \begin{definition}
-La \underline{suite de comptage} d'une classe combinatoire $\mathcal A$ est la suite $(A_n)_{n \geqslant 0}$ où $A_n$ est le nombre d'objet de taille $n$ dans $\mathcal A$.
+La \underline{suite de comptage} d'une classe combinatoire $\mathcal A$ est la suite $(A_n)_{n \geqslant 0}$ où $A_n$ est le nombre d'objets de taille $n$ dans $\mathcal A$.
 \end{definition}
 
 
@@ -80,64 +96,66 @@ La \underline{suite de comptage} d'une classe combinatoire $\mathcal A$ est la s
   La série génératrice ordinaire d'une classe combinatoire est la série génératrice ordinaire de sa suite de comptage. De manière équivalente, le série génératrice d'une classe combinatoire $\mathcal A$ peut s'écrire sous la forme 
   $$A(z) = \sum_{a \in \mathcal A} z ^{|a|} .$$
 \end{definition}
-Nous attirons l'attention sur le fait qu'une série génératrice ordinaire est vue en tant que série formelle, et non comme une série entière.
-
+Nous attirons l'attention sur le fait qu'une série génératrice ordinaire est vue en tant que série formelle, et non comme une série entière, on peut la manipuler sans se soucier des problèmes de convergence.
 
 Souvent, pour dénombrer les objets, on les décompose en éléments plus simples, mais du même type, pour obtenir une équation de récurrence vérifiée par les $A_n$. Cette équation peut-être plus ou moins simple à résoudre.
-L'approche proposée par la combinatoire analytique, repose sur la vision d'une classe combinatoire comme une construction à partir d'autres classes combinatoires. 
+L'approche proposée par la combinatoire analytique\cite{flajolet}, repose sur la vision d'une classe combinatoire comme une construction à partir d'autres classes combinatoires. 
 On définit les  constructions admissibles, qui produisent une classe combinatoire. 
 \begin{definition}Soient, $\mathcal A$, $\mathcal B^{1}$,\dots,$\mathcal B^{m}$ des classes combinatoires, et $\Phi$ une construction, 
 $$\mathcal A = \Phi(\mathcal B^{1},\dots,\mathcal B^{m}).$$
 La construction $\Phi$ est admissible si et seulement si la suite de comptage $(A_n)$  de $\mathcal A$ ne dépend que des suites de comptages $(B_n^{1}),\dots, (B_n^{m})$ de $\mathcal B^{1}$,\dots,$\mathcal B^{m}$.
 \end{definition}
-Pour chaque construction admissible $\Phi$, il existe un opérateur $\Psi$, agissant sur les génératrices ordinaires : si
+Pour chaque construction admissible $\Phi$, il existe un opérateur $\Psi$, agissant sur les séries génératrices ordinaires : si
 $$\mathcal A = \Phi(\mathcal B^{1},\dots,\mathcal B^{m}),$$
 alors, 
 $$A(z) = \Psi(B^1(z),\dots, B^m(z)).$$
 L'existence de cet opérateur va nous permettre d'utiliser la décomposition en classes combinatoires élémentaires pour obtenir les séries génératrices ordinaires de classes combinatoires plus compliquées.
-\subsection{Constructions de base}
-Pour définir les constructions de base, on se donne deux classes combinatoires particulières, la classe neutre $\mathcal E$, constituée d'un unique objet de taille nulle et la classe atomique $\mathcal Z$, constituée d'un unique objet de taille 1.
-Leurs séries génératrices sont donc respectivement $E(z)=1$ et $Z(z)=z$.
 
-\subsubsection*{Produit cartésien}
-La construction produit cartésien appliqué à deux classes combinatoires $\mathcal B$ et $\mathcal C$ donne la classe combinatoire 
+\section{Opérateurs élémentaires}
+Les constructions sur les classes combinatoires sont bâties à partir d'opérateurs élémentaires. Il n'y a pas d'ensemble canonique d'opérateurs élémentaires, et plus ils sont nombreux plus les classes combinatoires que l'on peut décrire sont complexes. Nous ne présentons ici que les trois opérateurs les plus simples : le produit cartésien, la somme et la séquence, car ce sont les trois sans lesquels on ne peux rien faire, et ce sont les trois que nous avons implémentés.
+
+Premièrement, on se donne deux opérateurs d'arité zéro, $\mathcal E$ et $\mathcal Z$, que l'on interprètera comme deux classes combinatoires particulières. 
+$\mathcal E$ sera interprété comme la classe combinatoire neutre, composée d'un unique élément de taille nulle.
+$\mathcal Z$ sera interprété comme la classe combinatoire atomique, composée d'un unique élément de taille $1$.
+Ces deux classes ont pour séries génératrices $E(z)=1$ et $Z(z)=z$ respectivement.
+
+\subsection*{Produit cartésien}
+La construction produit cartésien appliquée à deux classes combinatoires $\mathcal B$ et $\mathcal C$ donne la classe combinatoire 
 $$\mathcal A = \left\{\alpha =(\beta,\gamma)\ |\ \beta \in \mathcal B, \gamma \in\mathcal C\right\}$$
 munie de la fonction taille définie par 
 $$|\alpha|_{\mathcal A} = |\beta|_{\mathcal B} +|\gamma|_{\mathcal C}.$$
 On écrit alors $\mathcal A = \mathcal B \times \mathcal C$.
-En regardant toutes les possibilités de paires, on trouve que la suite de comptage de $A$ est donnée par le produit de convolution des suites de comptage de $B$ et $C$ :
+En regardant toutes les possibilités de paires, on trouve que la suite de comptage de $\mathcal A$ est donnée par le produit de convolution des suites de comptage de $\mathcal B$ et $\mathcal C$ :
 $$A_n = \sum_{k=0}^n B_k C_{n-k}.$$
 On remarque bien sûr que le produit cartésien est une construction admissible, et on reconnaît dans cette égalité le produit de deux séries entières. Ainsi la série génératrice de $\mathcal A$ est 
 $$A(z) = B(z)\cdot C(z).$$
 
-\subsubsection*{Somme combinatoire}
-La somme combinatoire est définie de manière à avoir les mêmes propriétés que la somme disjointe, mais sans avoir à imposer la disjonction des ensembles : on se donne deux objets neutres distincts, i.e. de taille nulle, $\Box$ et $\Diamond$ et on pose
-$$\mathcal B + \mathcal C \coloneqq (\{\Box\} \times\mathcal B) \cup (\{\Diamond\} \times\mathcal C),$$
-comme $\Box$ et $\Diamond$ sont distincts, le membre de droite est une union disjointe, pour toute classes combinatoires $\mathcal B$ et $\mathcal C$.
+\subsection*{Somme combinatoire}
+La somme combinatoire de deux classes $\mathcal B$ et $\mathcal C$ est définie de manière à avoir les mêmes propriétés que la somme disjointe, mais sans avoir à imposer la disjonction des ensembles. Pour cela, on se donne deux objets neutres distincts, i.e. de taille nulle, $\Box$ et $\Diamond$ et on pose
+$$\mathcal B + \mathcal C \coloneqq (\{\Box\} \times\mathcal B) \cup (\{\Diamond\} \times\mathcal C).$$
+Comme $\Box$ et $\Diamond$ sont distincts, le membre de droite est une union disjointe, pour toutes classes combinatoires $\mathcal B$ et $\mathcal C$.
 Il y a autant d'objets de taille $n$ dans $\{\Box\} \times\mathcal B)$ et $(\{\Diamond\} \times\mathcal C)$ que dans $\mathcal B$ et $\mathcal C$, et par conséquent, si $\mathcal A = \mathcal B + \mathcal C $, on a 
 $$A_n = B_n + C_n,$$ et ce quel que soit $n$, la somme combinatoire est donc une construction admissible.
 La série génératrice de $\mathcal A$ est 
 $$A(z)=B(z)+C(z).$$
 
-\subsubsection*{Séquence}
-Soit $\mathcal B$ une classe combinatoire, on définit $Seq (\mathcal B)$ comme la somme combinatoire infinie 
-$$Seq (\mathcal B) \coloneqq\{\epsilon\} + \mathcal B + (\mathcal B \times \mathcal B) +(\mathcal B \times \mathcal B \times \mathcal B) + \dots$$
+\subsection*{Séquence}
+Soit $\mathcal B$ une classe combinatoire, on définit $\mathbf{SEQ} (\mathcal B)$ comme la somme combinatoire infinie 
+$$\mathbf{SEQ} (\mathcal B) \coloneqq\mathcal E + \mathcal B + (\mathcal B \times \mathcal B) +(\mathcal B \times \mathcal B \times \mathcal B) + \dots$$
 Ce qui est équivalent à voir la séquence comme l'ensemble des suites d'objets de $\mathcal B$ : 
-$$Seq(\mathcal B) = \left\{ (\beta_1,\dots,\beta_l)\ |\ \beta_i \in \mathcal B,\ l\geqslant 0\right\}.$$
-En combinant les fonctions tailles associées au produit cartésien et à la somme combinatoire, on définit la taille dans $Seq(\mathcal B)$ : 
-$$|(\beta_1,\dots,\beta_l)|_{Seq(\mathcal B)} = |\beta_1|_{\mathcal B}+\dots+|\beta_l|_{\mathcal B}$$
-$Seq(\mathcal B)$ est une classe combinatoire si et seulement si, $\mathcal B$ ne contient pas d'objet de taille nulle. 
-En effet, s'il existe $\beta_0 \in \mathcal B$ de taille nulle, on peut créer une infinité de suites de $\beta_0$, toutes de taille nulle, $Seq(\mathcal B)$ n'est donc pas une classe combinatoire. \\
-Réciproquement, s'il n'existe pas d'objet de taille nulle dans $\mathcal B$, pour tout $n\geqslant 1$, il existe un nombre fini de suites d'entiers dont la somme est $n$, donc un nombre fini d'antécédents de $n$ par la fonction taille de $Seq(\mathcal B)$. Et la suite vide est le seul antécédent de $0$, donc $Seq(\mathcal B)$ est une classe combinatoire, et la séquence est une construction admissible.
+$$\mathbf{SEQ}(\mathcal B) = \left\{ (\beta_1,\dots,\beta_l)\ |\ \beta_i \in \mathcal B,\ l\geqslant 0\right\}.$$
+En combinant les fonctions tailles associées au produit cartésien et à la somme combinatoire, on définit la taille dans $\mathbf{SEQ}(\mathcal B)$ : 
+$$|(\beta_1,\dots,\beta_l)|_{\mathbf{SEQ}(\mathcal B)} = |\beta_1|_{\mathcal B}+\dots+|\beta_l|_{\mathcal B}$$
+$\mathbf{SEQ}(\mathcal B)$ est une classe combinatoire si et seulement si, $\mathcal B$ ne contient pas d'objet de taille nulle. 
+En effet, s'il existe $\beta_0 \in \mathcal B$ de taille nulle, on peut créer une infinité de suites de $\beta_0$, toutes de taille nulle, $\mathbf{SEQ}(\mathcal B)$ n'est donc pas une classe combinatoire. \\
+Réciproquement, s'il n'existe pas d'objet de taille nulle dans $\mathcal B$, pour tout $n\geqslant 1$, il existe un nombre fini de décompositions en entiers de $n$, c'est à dire un nombre fini de suites d'entiers dont la somme est $n$, et donc un nombre fini d'antécédents de $n$ par la fonction taille de $\mathbf{SEQ}(\mathcal B)$. Et la suite vide est le seul antécédent de $0$. $\mathbf{SEQ}(\mathcal B)$ est donc une classe combinatoire, et la séquence est une construction admissible.
 
-Pour calculer la série génératrice de $\mathcal A = Seq(\mathcal B)$, on utilise les propriétés vues avec le produit cartésien et la somme combinatoire : 
+Pour calculer la série génératrice de $\mathcal A = \mathbf{SEQ}(\mathcal B)$, on utilise les propriétés vues avec le produit cartésien et la somme combinatoire : 
 $$A(z) = 1+ B(z)+B(z)\cdot B(z)+B(z)\cdot B(z) \cdot B(z) \dots$$
 $$A(z) = 1 + B(z)+B(z)^2+B(z)^3 + \dots $$
 $$A(z)= \frac{1}{1-B(z)}$$
 
-Il existe d'autres constructions admissibles, 
-
-\subsection{Spécification}
+\section{Spécifications}
 \begin{definition}
 Une spécification pour un $n-$uplet de classes combinatoires $(\mathcal A_1,\mathcal A_2,\dots,\mathcal A_n)$, est un système de $n$ équations
 $$\left\{
@@ -148,12 +166,119 @@ $$\left\{
 \mathcal A_n = & \Phi_n (\mathcal A_1,\mathcal A_2,\dots, \mathcal A_n)\\
 \end{array}
 \right.$$ 
-où $\Phi_i$ est une construction admissible, produite avec les construction de produit cartésien, de la somme combinatoire, ou de la séquence sur les classes $\mathcal A_1,\mathcal A_2,\dots, \mathcal A_n$, $\mathcal E$ et $\mathcal Z$.\end{definition}
+où $\Phi_i$ est une construction admissible, utilisant les opérateurs du produit cartésien, de la somme combinatoire, ou de la séquence sur les classes $\mathcal A_1,\mathcal A_2,\dots, \mathcal A_n$, $\mathcal E$ et $\mathcal Z$.\end{definition}
 
-\subsection{Fonctions génératrices multivariées}
-Jusque là, on ne considérait que des
-\subsection*{exemple : les arbres binaires-ternaires}
-Un arbre binaire-ternaire est un arbre dont les noeuds internes ont deux ou trois fils : 
+\subsection*{Exemple}
+Un arbre plan enraciné, ou arbre de Catalan, est composé soit d'une feuille, soit d'un nœud interne et d'un certain nombre de sous-arbres, mais la spécification d'un arbre enraciné dépendra du critère que l'on choisit pour la taille.
+Si l'on choisit que la taille d'un arbre est le nombre de ses feuilles, on obtient la spécification
+$$\mathcal A = \mathcal Z + \mathbf{SEQ}(\mathcal A).$$ 
+Mais si on décide que la taille d'un arbre est le nombre de tous ces nœuds, internes et externes, on trouve la spécification
+$$\mathcal A =\mathcal Z \times \mathbf{SEQ}(\mathcal A).$$
+Ces deux spécifications s'interprètent en deux équations fonctionnelles différentes :\\
+pour le premier cas $A(z)=z+\fraction{1}{1-A(z)}$,\\
+et $A(z)=\fraction{z}{1-A(z)}$ dans le second cas.
+
+\section{Fonctions génératrices multivariées}
+Jusque là, nous n'avons étudié les classes combinatoires que selon un seul critère, la taille des objets qu'elles contiennent, mais souvent, il est intéressant de pouvoir prendre en compte plusieurs critères. Par exemple dans les arbres de Catalan, on pourrait vouloir connaître le nombre d'arbre de taille 5 ayant 3 nœuds internes,  ou encore prendre en compte aussi le nombre de nœuds binaires.
+Pour utiliser la méthode vue précédemment sur plusieurs paramètres, nous allons devoir définir précisément ces paramètres, et énoncer certaines propriétés qu'ils devront vérifier.
+\begin{definition}
+  Soit $\mathcal A$ une classe combinatoire, un \underline{paramètre} $d$-dimensionnel est une fonction
+  $$\chi : \mathcal A \mapsto \mathbb N^d.$$
+  La suite de comptage de $\mathcal A$ selon la fonction taille et le paramètre $\chi$ est alors définie par :
+  $$A_{n,k_1,\dots,k_d} = card\left \{\alpha \in \mathcal A \text{ tel que }  | \alpha|_{\mathcal A} = n,\ \chi_1(\alpha)=k_1,\dots,\chi_d(\alpha)=k_d \right \}$$
+\end{definition}
+
+On note $\mathcal A_{\chi}$ une classe combinatoire $\mathcal A$ dotée d'un paramètre $\chi$.
+
+Pour simplifier l'écriture et la lecture on introduit la notation suivante, pour $\bold{x}$ un vecteurs de $d$ variables et $\bold{k}$ un vecteur de $\mathbb N^d$,
+$$\bold{x^k} = x_1^{k_1}x_2^{k_2}\cdots x_d^{k_d}.$$
+On peut maintenant définir la fonction génératrice de cette nouvelle suite de comptage.
+\begin{definition}
+  Soit $A_{n,\bold k}$ une suite sur plusieurs index, où $\bold{k}$ est un vecteur de $\mathbb N^d$,
+  la série génératrice ordinaire de cette suite est 
+  $$A(z,\bold{u}) = \sum_{n,\bold k}  A_{n,\bold{k}}z^n\bold{u^k}.$$
+  
+Soient $\mathcal A$ une classe combinatoire et $\chi$ un paramètre, la série génératrice ordinaire de $(\mathcal A, \chi)$, est comme auparavant la série génératrice de la suite de comptage associée :
+$$A(z,\bold u) = \sum_{\alpha \in \mathcal A}z^{|\alpha|}\bold u^{\chi (\alpha)}.$$
+\end{definition}
+
+Avec ces définitions tellement semblables à celles vues tout au début, on aimerait pouvoir construire les classes combinatoires dotées de paramètres par la même méthode qu'avec les classes combinatoires simples. Les spécifications fonctionneront de même, les trois constructions élémentaires que nous avons définies s'appliqueront de la même façon, mais il faut s'assurer que les paramètres sont compatibles entre eux, comme il fallait s'assurer quand on formait la classe $\mathcal A$ à partir des classes $\mathcal B$ et $\mathcal C$ que la suite de comptage $A_n$ ne dépendait que de $B_n$ et $C_n$.
+
+\begin{definition}
+  Soient $\mathcal A_{\chi}$, $\mathcal B_{ \xi}$ et $\mathcal C_{\zeta}$ des classes combinatoires dotées de paramètres tous trois de même dimension,
+  \begin{description}
+    \item[Produit cartésien] Si $\mathcal A = \mathcal B \times \mathcal C$, $\chi$ est hérité de $\xi$ et $\zeta$ si et seulement si $\chi(\beta,\gamma) = \xi(\beta)+\zeta(\gamma)$.\\
+    \item[Somme combinatoire] Si $\mathcal A = \mathcal B + \mathcal C$, $\chi$ est hérité de $\xi$ et $\zeta$ si et seulement si
+    $$\chi(\omega) = \left\{\begin{array}{l}
+    \xi(\omega) \text{ si } \omega \in \mathcal B\\
+    \zeta(\omega) \text{ si } \omega \in \mathcal C
+    \end{array}\right. .$$\\
+    \item[Séquence] Si $\mathcal A = \mathbf{SEQ}(\mathcal B)$, $\chi$ est hérité de $\xi$ si et seulement si
+    $$ \chi(\beta_1,\dots,\beta_i) = \xi(\beta_1)+\xi(\beta_2)+\dots+\xi(\beta_i). $$
+  \end{description}
+\end{definition}
+
+Il apparaît donc que l'héritage est une extension de la condition que devait vérifier la taille pour qu'une construction soit admissible.
+On voit dans ce qui précède que la taille ne joue plus de rôle particulier, et on peut voir la taille comme une composante du paramètre dont une classe combinatoire est dotée.
+Ainsi, la série génératrice d'une classe $\mathcal A_{\chi}$ devient simplement
+$$A(\bold z) = \sum_{\alpha \in \mathcal A}\bold z^{\chi(\alpha)}.$$
+
+Les règles d'héritages pour les paramètres étant similaires aux règles de dépendance des tailles, les opérateurs élémentaires sont toujours valides, et les opérateurs agissant sur les séries génératrices sont inchangés, à ceci près qu'ils s'appliquent maintenant sur des séries génératrices multivariées.
+$$\begin{array}{llll}
+Produit\ cartésien: & \mathcal A = \mathcal B \times \mathcal C & \Rightarrow & A(\bold z) = B(\bold z)\cdot C(\bold z)\\
+\\
+Somme\ combinatoire: &\mathcal A = \mathcal B + \mathcal C & \Rightarrow & A(\bold z) = B(\bold z) + C(\bold z)\\
+\\
+S\acute e quence: & \mathcal A = \mathbf{SEQ}(\mathcal B) & \Rightarrow & A(\bold z) = \fraction{1}{1-B(\bold z)}\\
+\end{array}
+$$
+\subsection*{Exemple : les arbres de Catalan}
+Revenons à l'exemple des arbres de Catalan. 
+Maintenant, nous savons prendre en compte plusieurs paramètres. En plus de la taille, en nombre de nœuds, nous nous intéressons également à la longueur de cheminement cumulée, c'est à dire, la somme des profondeurs de tous les nœuds de l'arbre.
+
+Un arbre est toujours composé d'un nœud duquel pendent un certain nombres de sous-arbres (ce nombre est possiblement nul, l'arbre est alors réduit à une feuille).
+\begin{center}
+\begin{tabular}{l|c|c|c|c|c}
+ \text{longueur de cheminement : } &  0 &  1 & 2 & 3 & 4 \\
+ \hline
+\text{taille 1} & $\bullet$ &
+$\xymatrix@R=10pt{*={\bullet}\ar@{-}[d]\\*={\bullet}} $&$\varnothing$ &
+$\xymatrix@R=10pt{*={\bullet}\ar@{-}[d]\\*={\bullet}\ar@{-}[d]\\*={\bullet}}$&
+$\varnothing$ \\
+&&&&&\\
+\hline
+\text{taille 2}& $\varnothing $
+&$ \varnothing$ &
+$\xymatrix@R=7pt@C=7pt{*={}&*={\bullet}\ar@{-}[dl]\ar@{-}[dr]&*={}\\*={\bullet}&
+  &*={\bullet}}$
+&$\varnothing$
+&$\xymatrix@R=7pt@C=7pt{*={}&*={\bullet}\ar@{-}[dl]\ar@{-}[dr]&*={}\\*={\bullet}\ar@{-}[d]& &*={\bullet}\\*={\bullet}&*={} &*={}}$\\
+&&&&&\\
+\hline
+\text{taille 3}&$\varnothing$&$\varnothing$&$\varnothing$&$\xymatrix@R=10pt@C=10pt{*={}&*={\bullet}\ar@{-}[dl]\ar@{-}[dr]\ar@{-}[d]&*={}\\*={\bullet}&*={\bullet} &*={\bullet}}$&$\varnothing$\\
+&&&&&\\
+\hline
+\text{taille 4}&$\varnothing$ &$\varnothing$ &$\varnothing$ &$ \varnothing$ &$ \xymatrix@R=15pt@C=8pt{*={}&*={}&*={\bullet}\ar@{-}[dl]\ar@{-}[dr]\ar@{-}[dll]\ar@{-}[drr]&*={}&*={}\\*={\bullet}&*={\bullet}&*={} &*={\bullet}&*={\bullet}}$ \\
+&&&&&\\
+\hline
+\end{tabular}
+\end{center}
+Notons $\mathcal C$ la classe combinatoire des arbres de Catalan, et $\lambda$ le paramètre qui représente la longueur de cheminement d'un arbre $\tau \in \mathcal C$.
+On voit que la longueur de cheminement de $\tau$ est la somme des tailles de tous les sous-arbres de $\tau$. Et de là, c'est aussi la longueur de cheminement des sous-arbres pendant à la racine de $\tau$, plus la taille de ces sous-arbres. Soit $V$, l'ensemble de ces sous-arbres,
+$$\lambda(\tau) = \sum_{\nu \in V}\lambda(\nu)+|\nu|.$$
+Introduisons maintenant le paramètre $\mu(\tau)=|\tau|+\lambda(\tau)$.\\
+On obtient ainsi la spécification 
+$$\mathcal {C}_{n,\lambda} = \mathbf{SEQ}(\mathcal C _{n,\mu}) \times \mathcal Z. $$
+L'interprétation en équation fonctionnelle n'est pas évidente, à cause des deux paramètres $\lambda$ et $\mu$. Il faut une petite manipulation. Nous avons d'ailleurs choisi la notation où l'on distingue la taille de l'objet, $n$, du paramètre pour plus de facilité dans cette manipulation.
+On a vu que
+$$C_{n,\mu}(u,z) = \sum_{\tau \in \mathcal C}z^{|\tau|}u^{\mu(\tau)},$$
+et donc
+$$C_{n,\mu}(u,z) = \sum_{\tau \in \mathcal C}z^{|\tau|}u^{|\tau|}u^{\lambda(\tau)} = C_{n,\lambda}(zu,u).$$
+Et enfin, on a l'équation fonctionnelle
+$$C_{n,\lambda}(z,u) = \frac{z}{1-C_{n,\lambda}(zu,u)}.$$
+
+\subsection*{Un autre exemple : les arbres binaires-ternaires}
+Un arbre binaire-ternaire est un arbre dont les nœuds internes ont deux ou trois fils : 
 $$
 \begin{array}{c|ccc}
   \text{taille 1} & \bullet&&\\
@@ -175,27 +300,34 @@ $$
  &\xymatrix@R=8pt @C=8pt{& *={\bullet}  \ar@{-}[dl] \ar@{-}[dr] & &*={}\\ *={\bullet} &*={} &*={\bullet}\ar@{-}[dl]\ar@{-}[d]\ar@{-}[dr] &*={}\\& *={\bullet}&*={\bullet}&*={\bullet} }&\\
 \end{array}
 $$
-Un arbre binaire ternaire est soit une feuille $\bullet$, 
-soit un nœud binaire avec deux arbres pendants $\xymatrix@R=5pt @C=5pt{& *={\bullet} \ar@{-}[dl]\ar@{-}[dr]& \\ *={\triangle}&&*={\triangle} } $,
-soit un nœud ternaire avec trois arbres pendants $\xymatrix@R=10pt @C=10pt{& *={\bullet} \ar@{-}[dl]\ar@{-}[dr]\ar@{-}[d]& \\ *={\triangle}&*={\triangle}&*={\triangle} } $
-Si on prend en compte les paramètres suivants :
+Un arbre binaire ternaire est soit une feuille, 
+soit un nœud binaire avec deux arbres pendants ,
+soit un nœud ternaire avec trois arbres pendants :
+$$\bullet\text{ ou } 
+\xymatrix@R=5pt @C=5pt{& *={\bullet} \ar@{-}[dl]\ar@{-}[dr]& \\ *={\triangle}&&*={\triangle}} \text{ ou }
+\xymatrix@R=10pt @C=10pt{& *={\bullet} \ar@{-}[dl]\ar@{-}[dr]\ar@{-}[d]& \\ *={\triangle}&*={\triangle}&*={\triangle} }$$
+En appliquant ce qu'on n'a vu précédemment, on voit qu'un arbre binaire-ternaire est la somme de trois classes combinatoires : la classe composée des feuilles, la classe composée des nœuds binaires et des sous arbres pendants à ces nœuds et la classe composée des nœuds ternaires et des sous arbres. Ces deux dernières classes sont elles-mêmes le produit cartésien de classes : le produit des nœuds binaires et des paires d'arbres binaires-ternaires, et le produit des nœuds ternaires et des triplets d'arbres binaires-ternaires.
+On obtient ainsi la spécification suivante
+$$\mathcal{BT} = \mathcal Z + \mathcal Z\times\mathcal{BT}^2 + \mathcal Z\times\mathcal{BT}^3, $$
+qui s'interprète en l'équation fonctionnelle
+$$BT(z,u,v) = z+uBT(z,u,v)^2+vBT(z,u,v)^3,$$
+où l'on note 
 $$\left\{
 \begin{array}{l}
   z : \text{le nombre de feuilles}\\
   u : \text{le nombre de nœuds binaires}\\
-  v : \text{le nombre de nœuds ternaires,}\\
-\end{array}
+  v : \text{le nombre de nœuds ternaires.}\\
+\end{array}\right.
 $$
-on obtient la spécification suivante
-$$\mathcal{BT} = \{z\} + \{u\}\cdot\mathcal{BT}^2 + \{v\}\cdot\mathcal{BT}^3, $$
-ce qui en terme de série génératrice donne 
-$$BT(z,u,v) = z+uBT(z,u,v)^2+vBT(z,u,v)^3$$
 
-\section{Sage}
+On pourrait aussi vouloir prendre en compte le nombre total de nœuds, $w$, on obtient alors l'équation fonctionnelle
+$$BT(z,u,v,w) = zw+uwBT(z,u,v,w)^2+vwBT(z,u,v,w)^3.$$
 
-\subsection{Introduction}
+\chapter{Sage}
 
-\subsubsection{Présentation}
+\section{Introduction}
+
+\subsection{Présentation}
 Sage est un logiciel libre (sous licence GPL) de calcul formel, symbolique et
 numérique \cite{sage}. Il est principalement écrit en C/C++ et Python/Cython/Pyrex. Le but
 du projet Sage est de fournir une alternative aux solutions de calculs
@@ -205,26 +337,15 @@ propriétaires comme Mapple, Mathematica, Matlab ...
 Historiquement Sage est un regroupement de différents projets libres autour
 d'une interface Python unifiée, pour faciliter les traitements entre ces
 \emph{briques de base} (Singular, Maxima, GP/PARI, GAP). Mais de plus en plus
-le projet se tourne vers le développement de ses propres paquetages pour
-acquérir son indépendance, donc améliorée la cohérence de l'architecture, 
-du le calendrier de release et faciliter ainsi le développement de nouvelles
-fonctionnalités et la maintenance d'ancienne.
+le projet se tourne vers le développement de ses propres paquets pour
+acquérir son indépendance, et donc améliorer la cohérence de l'architecture, le calendrier de release et faciliter ainsi le développement de nouvelles
+fonctionnalités et la maintenance d'anciennes.
 
 
 Dans Sage, deux interfaces sont disponibles :
 \vspace{3mm}
 
 \begin{itemize}
-\noindent\begin{minipage}{\linewidth}
-\item L'interface bloc-note (ou notebook). Elle se présente sous la forme
- d'une interface embarquée dans un navigateur web, comme ceci :
-\vspace{3mm}
-%\begin{figure}[!h]
-\begin{center}
-\includegraphics[width=17cm]{notebook_screenshot.png}
-\end{center}
-%\end{figure}
-\end{minipage}
 \noindent\begin{minipage}{\linewidth}
 \item L'interface ligne de commande. Elle se présente comme un top-level
   python classique :
@@ -234,6 +355,16 @@ Dans Sage, deux interfaces sont disponibles :
 \includegraphics[width=10cm]{cli_screenshot.png}
 %\end{figure}
 \end{center}
+\end{minipage}
+\noindent\begin{minipage}{\linewidth}
+\item L'interface bloc-note (ou notebook). Elle se présente sous la forme
+ d'une interface embarquée dans un navigateur web, comme ceci :
+\vspace{3mm}
+%\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=17cm]{notebook_screenshot.png}
+\end{center}
+%\end{figure}
 \end{minipage}
 \end{itemize}
 
@@ -246,9 +377,9 @@ polynômes de variables x, y et z, à coefficients dans $\mathbb{Q}$ :
 \verb|R.<x,y,z> = PolynomialRing(QQ)|
 
 
-\subsubsection{Architecture}
+\subsection{Architecture}
 Sage ayant pour objectif de couvrir l'ensemble des besoins en calcul pour
-tous les domaines des Mathématiques, la taille du code est donc assez
+tous les domaines des mathématiques, la taille du code est donc assez
 conséquente (un peu plus de 11 milliards de lignes de code sans compter les
 paquets supplémentaires). Cela a été une première difficulté dans la
 réalisation de ce projet.
@@ -290,22 +421,22 @@ Cela permet une plus grande facilité pour la compréhension du code et le
 maintien à jour du code comme de la documentation et des tests.
 
 
-\subsection{Implémentation}
+\section{Implémentation}
 
-\subsubsection{LazyPowerSeries}
+\subsection{LazyPowerSeries}
 Sage contenait déjà une implémentation des séries génératrices monovariées
 (basée sur le travail fait sur Aldor
 \cite{Hemmecke+Rubey:Aldor-Combinat:2006}) sous la forme d'une classe
 Python. L'implémentation se présente donc sous la forme de deux classes
-\verb|FormalMultivariatePowerSeriesRing| et \verb|FormalMultivariatePowerSeries|
+\verb|FormalMultivariatePowerSeriesRing| et\\ \verb|FormalMultivariatePowerSeries|
 héritant de \verb|LazyPowerSeriesRing| et \verb|LazyPowerSeries|. Les
 opérations supportées par les séries existantes sont l'addition, la multiplication, la
-composition, la dérivation et l'intégration (la primitive ne fait). Pour nos
+composition, la dérivation et l'intégration (la primitive en fait). Pour nos
 séries nous supportons l'ensemble de ces opérations, exceptée la
 primitivation, et nous y avons ajouté la séquence.\\
 Les classes \verb|FormalMultivariatePowerSeriesRing| et
 \verb|LazyPowerSeriesRing| sont nécessaires à Sage et permettent de garantir
-certaines fonctonalités communes à tous les anneaux notamment les sucres
+certaines fonctionalités communes à tous les anneaux notamment les sucres
 syntaxiques vus précédemment.
 
 
@@ -316,13 +447,13 @@ de programmation. Cette \emph{paresse} est obtenu en utilisant le concept de
 générateur python, que nous présenterons avant de présenter les opérations
 implémentées.
 
-\subsubsection{Générateurs}
+\subsection{Générateurs}
 Les générateurs Python \cite{genpython}, sont un mécanisme permettant de créer
 des objets itérables. Ils sont déclarés sous forme de fonction classique
 contenant le mot clé \verb|yield|. A chaque appel de la méthode \verb|next|
 associé à ce générateur, le corps de la \emph{fonction} est éxécuté jusqu'à
 rencontrer un \verb|yield|, et l'argument donné à \verb|yield| est retourné
-par \verb|next| et l'éxécution du corps ce stoppe. Au prochain appel de
+par \verb|next| et l'éxécution du corps se stoppe. Au prochain appel de
 \verb|next|, l'éxécution du corps reprend jusqu'au prochain \verb|yield|.
 
 
@@ -348,7 +479,6 @@ while True :
 # ou
 
 for n in integers_definition():
-    n = integers.next()
     if n % 2 == 0:
         print("%d est pair"%n)
     else :
@@ -356,11 +486,11 @@ for n in integers_definition():
 \end{lstlisting}
 \end{minipage}
 
-L'avantage des générateurs est qu'ils permettent d'effectuer les calculs que
+L'avantage des générateurs est qu'ils permettent d'effectuer les calculs seulement
 quand cela est nécessaire, c'est ce qui permet d'obtenir la \emph{paresse} :
-chaque coefficient de la série ne sera calculer que quand il sera nécessaire.
+chaque coefficient de la série ne sera calculé que quand il sera nécessaire.
 
-\subsubsection{Représentation des séries}
+\subsection{Représentation des séries}
 
 Dans l'implémentation existante, les séries monovariées sont représentées par
 des \emph{stream}. Un \emph{stream} peut être vu comme une liste infinie où
@@ -370,7 +500,7 @@ dans l'ordre croissant de l'ordre de leur monôme associé.
 
 
 Par exemple, si nous définissons $F$ comme étant la série génératrice
-monovariée dont les coefficients sont les nombres de Fibonacci (définit par
+monovariée dont les coefficients sont les nombres de Fibonacci (définis par
 $f_0=1,\ f_1=1,\ f_{n+2} = f_{n+1} + f_n$), alors nous pouvons illustrer sa
 représentation dans le tableau suivant :
 
@@ -390,18 +520,18 @@ entrée & sortie  &  mémoire \\
 On voit alors comment sont manipulées les séries : le générateur permet le
 calcul des coefficients tandis que le \emph{stream} permet le stockage des
 coefficients et la demande de nouveaux coefficients. C'est ce fonctionnement
-que nous avons garder dans le cas des séries multivariées.
+que nous avons gardé dans le cas des séries multivariées.
 
 \vspace{3mm}
 
 Dans le cas des séries génératrices multivariées, le problème est comment
 ranger nos coefficients dans un \emph{stream} ? La première idée est de garder
 un ordre sur les monômes de plusieurs variables en prenant la somme de l'ordre
-de chaque variable : $x^4 y^2 z^8 < x^{11} y \ (2+4+8 < 11+1)$. Ainsi chaque
-case du stream contiendra une liste de coefficients de même ordre. Il faut
+de chaque variable : $x^{11} y <x^4 y^2 z^8  \ (11+1 < 2+4+8)$. Ainsi chaque
+case du \emph{stream} contiendra une liste de coefficients de même ordre. Il faut
 aussi garder l'association entre chaque coefficient et son monôme, on stockera
 donc des couples coefficient/monôme. Les monômes seront représentés par
-des listes d'entier contenant les puissances de chaque variable (dans un ordre
+des listes d'entiers contenant les puissances de chaque variable (dans un ordre
 fixé), par exemple : $x^iy^jz^k \approx \verb|[i,j,k]|$.
 
 
@@ -449,71 +579,206 @@ entrée & sortie  &  mémoire \\
 \\
 \hline
 \end{tabular}
-On remarquera qu'une liste vide correspond à un terme nul.
 \end{center}
 
+On remarquera qu'une liste vide correspond à un terme nul.
 Maintenant la représentation de nos séries et le concept de générateur
 expliqués passons aux détails du mécanisme.
 
-\subsection{Opérateurs}
+\section{Opérateurs}
 
 Chaque opérateur correspond à deux méthodes de la classe
 \verb|FormalMultivariatePowerSeries|. Une première méthode qui est en fait un
 générateur et qui calculera les coefficients de la série obtenue. Une deuxième
-méthode qui à partir du générateur créée une nouvelle instance pour la série
+méthode qui à partir du générateur crée une nouvelle instance pour la série
 calculée, cette méthode est totalement héritée de \verb|LazyPowerSeries|.\\
 Les opérateurs ont été implémentés de façon naïve, ce qui n'a pas empêché des
 difficultés sur la pluplart d'entre eux.
 
-\subsubsection{Addition}
+
+\subsection{Addition}
 
 Pour l'addition, l'algorithme est simple et correspond plus ou moins à une
-concaténation de deux listes :
-
+concaténation de deux listes en faisant attention aux termes qui ont le même
+monôme :
 \begin{algorithm}
+\DontPrintSemicolon
 \SetKw{Yield}{yield}
 \SetKw{Break}{break}
 
 \KwIn{two series A and B}
 \BlankLine
-$ i \leftarrow 0 $ \;
+$ n \leftarrow 0 $\;
 \While{True}{
-  new\_list $ \leftarrow $ A.stream[i].copy()\;
-  \ForEach{(coeff,monom) in B.stream[i] }{
+
+  new\_list $ \leftarrow $ A.stream[n].copy()
+  \ForEach{(coeff,monom) in B.stream[n] }{
     \ForEach{(coeff',monom') in new\_list }{
       \If{monom == monom' }{
         \eIf{coeff+coeff'== 0 }{
-          delete (coeff',monom') of new\_list\; 
-          \Break \;
+          delete (coeff',monom') of new\_list\;
+          \Break\;
         }{
-          replace (coeff',monom') by (coeff'+coeff,monmo') in new\_list\;
-          \Break \;
+          replace (coeff',monom') by (coeff'+coeff,monom') in new\_list\;
+          \Break\;
         }
       }
       append (coeff,monom) to new\_list\;
     }
   }
-  \Yield new\_list \;
+  $n \leftarrow n + 1$
+  \Yield new\_list\;
 }
-
-
 \caption{add two series}
 \end{algorithm}
 
 
-\subsubsection{Multiplication}
+\subsection{Multiplication}
 
+La multiplication est similaire à l'addition sauf que la construction de
+\verb|new_list| n'est plus une simple concaténation mais un produit de
+convolution :
+\begin{algorithm}
+\DontPrintSemicolon
+\SetKw{Yield}{yield}
+\SetKw{Break}{break}
 
+\KwIn{two series A and B}
+\BlankLine
+$n \leftarrow 0 $\;
+\While{True}{
+  \For{$k \leftarrow 0$ \KwTo $n$ }{
+    new\_list $ \leftarrow $ []\;
+    \ForEach{(coeff,monom) in A.stream[k] }{
+      \ForEach{(coeff',monom') in B.stream[n-k] }{
+        append (coeff * coeff',monom + monom') to new\_list\;
+      }
+    }
+  }
+  \ForEach{(coeff,monom) and (coeff',monom') in new\_list such that monom ==
+    monom'}{
+    \eIf{coeff+coeff'== 0 }{
+      delete (coeff',monom') and (coeff,monom) of new\_list\;
+    }{
+      replace (coeff',monom') by (coeff'+coeff,monom') and delete
+      (coeff,monom) in new\_list\;
+    }
+  }
+  $n \leftarrow n+1$\;
+  \Yield new\_list\;
+}
+\caption{multiply two series}
+\end{algorithm}
 
+\subsection{Séquence}
 
-\subsubsection{Séquence}
-\subsubsection{Composition}
-\subsubsection{Dérivation}
+Pour l'opérateur $\mathbf{SEQ}$ il y a deux façons de le concevoir :
+\begin{itemize}
+\item comme l'opérateur pseudo-inverse $\mathbf{SEQ} (F) \longrightarrow
+  \frac{1}{1-F}$
+\item comme la fonction récursive $\mathbf{SEQ} (F) \longrightarrow 1 + F \cdot
+  \mathbf{SEQ} (F)$
+\end{itemize}
+La deuxième manière de voir $\mathbf{SEQ}$ semble bien sûr plus évidente à
+implémenté car plus simple et surtout plus stable numériquement.
+On ajoute d'ailleurs un champ \verb|_pows| à notre classe, qui est un \emph{stream}
+de \\ \verb|FormalMultivariatePowerSeries| et qui a pour générateur une simple
+fonction anonyme. Nous n'avons donc pas à recalculer les puissances de notre
+série à chaque itération, ce qui peut aussi servir pour la composition.
 
+\begin{algorithm}
+\DontPrintSemicolon
+\SetKw{Yield}{yield}
+\SetKw{Break}{break}
 
+\KwIn{one serie A with first term equal to 0}
+\BlankLine
+$n \leftarrow 0 $\;
+\While{True}{
+  new\_list $ \leftarrow $ []\;
+  \For{$k \leftarrow 0$ \KwTo $n$ }{
+    append A.\_pows[k].stream[n] to new\_list\;
+  }
+  \ForEach{(coeff,monom) and (coeff',monom') in new\_list such that monom ==
+    monom'}{
+    \eIf{coeff+coeff'== 0 }{
+      delete (coeff',monom') and (coeff,monom) of new\_list\;
+    }{
+      replace (coeff',monom') by (coeff'+coeff,monom') and delete
+      (coeff,monom) in new\_list\;
+    }
+  }
+  $n \leftarrow n+1$\;
+  \Yield new\_list\;
+}
+\caption{$\mathbf{SEQ} $ of a serie}
+\end{algorithm}
 
+\subsection{Composition}
+La composition reprend en fait les opérations décrites précédemment. On
+construit une nouvelle série en remplaçant simplement la variable voulue par la
+série à composer :
 
-\bibliography{biblio}
+\begin{algorithm}
+\DontPrintSemicolon
+\SetKw{Yield}{yield}
+\SetKw{Break}{break}
+
+\KwIn{one series A and list L of series/variable of length the number of
+  variable\\
+  every series of the list must have the first term equal to 0}
+
+\BlankLine
+$n \leftarrow 0 $\;
+$new\_serie \leftarrow first\_term(A) $\;
+\While{True}{
+  \ForEach{(coeff,powers) in A.coefficient(n)}{
+    new\_serie $\leftarrow new\_serie + coeff \cdot L^{powers} $\;
+  }
+  $n \leftarrow n+1$\;
+  \Yield new\_serie.coefficient(n)\;
+}
+\caption{composition of series}
+\end{algorithm}
+
+Précisions que la méthode \verb|coeffcient| renvoie la liste des coefficients
+en $n^{ième} $ position et que $L^{powers}$ est implémentée avec la méthode \verb|map|.
+
+\subsection{Dérivation}
+La dérivation quant à elle est assez simple, il suffit de multiplier chaque
+coefficient par la puissance de la variable selon laquelle on dérive et de
+déplacer ce couple un rang avant :
+
+\begin{algorithm}
+\DontPrintSemicolon
+\SetKw{Yield}{yield}
+\SetKw{Break}{break}
+
+\KwIn{one serie A and p the position of a variable}
+\BlankLine
+$n \leftarrow 1 $\;
+\While{True}{
+  new\_list $ \leftarrow $ []\;
+  \ForEach{(coeff,powers) in A.\_stream[n]}{
+    $powers[p] \leftarrow  powers[p] - 1 $\;
+    \If{$powers[p] \geq 0 $}{
+      append $(coeff * (powers[p]+1),powers) $ to new\_list \;
+    }
+  }
+  $n \leftarrow n+1$\;
+  \Yield new\_list\;
+}
+\caption{derivate one serie}
+\end{algorithm}
+
+\chapter*{Conclusion}
+Pour ce projet, nous avons certes dû étudier et maîtriser un nouvel outil mathématique, mais le principal défi a été l’implémentation de cet outil pour l’intégrer au logiciel Sage. 
+Il nous a fallu d’une part trouver une représentation utilisable et efficace des objets manipulés, et pour ce faire, nous avons utilisé des concepts de programmation nouveaux pour nous, et des traits propres au langage Python. 
+D’autre part, il fallait s’intégrer à un projet de grande ampleur, le développement de Sage, se familiariser avec les normes et les respecter pour pouvoir faire fonctionner les outils que nous avions créés. Au cours de ce travail de lecture de code, nous avons d’ailleurs repéré un bug dans un paquet existant, une erreur dans le calcul de l’ordre d’une série. Nous avons corrigé ce bug et soumis un patch. Ces difficultés une fois surmontées, il est très satisfaisant de voir notre travail utilisable directement dans Sage, et nous avons soumis notre paquet pour qu’il puisse être ajouté à une prochaine version de Sage, et que d’autres personnes puissent l’utiliser. 
+Il y a bien sûr encore du travail, d’autres opérateurs, d’autres fonctionnalités à ajouter pour augmenter cette nouvelle librairie multivariate\_series, et éventuellement proposer une alternative à Gfun. Notre travail permet des calculs sur les séries que ne permet pas Gfun, mais n’a pas encore intégré les calculs sur les coefficients disponibles dans Gfun. Il faut aussi continuer de développer Sage, en augmentant ou en créant d’autres paquets, pour que ce logiciel puisse être utilisé par le plus de scientifiques possible.
+
+\bibliographystyle{alpha}
+\bibliography{PSTL}
 
 
 

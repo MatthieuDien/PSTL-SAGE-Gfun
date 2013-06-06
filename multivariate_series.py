@@ -1,3 +1,35 @@
+"""
+Formal Multivariate Power Series
+
+This files provides an implementation of Formal Multivariate Power
+Series. The implementation is based on the LazyPowerSeriesRing and
+LazyPowerSeries class. The internal data structure uses the stream class where
+each case is a list of term of the same total degree. The terms are represented
+by a 2-tuple with a coefficient from the base ring and a list of integer of
+the same length that the number of variable, which is the monomonial
+associated to the coefficient in the serie.
+The mecanism is the same that for the Lazy Power Series.
+
+
+This code is based on the work of Ralf Hemmecke and Martin Rubey's, developed
+by Marguerite Zamansky and Matthieu Dien.
+"""
+#*****************************************************************************
+#       Copyright (C) 2013 Matthieu Dien <matthieu.dien@gmail.com>, 
+#
+#  Distributed under the terms of the GNU General Public License (GPL)
+#
+#    This code is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#    General Public License for more details.
+#
+#  The full text of the GPL is available at:
+#
+#                  http://www.gnu.org/licenses/
+#*****************************************************************************
+
+
 from series import LazyPowerSeriesRing, LazyPowerSeries, uninitialized
 
 from stream import Stream, Stream_class
@@ -14,8 +46,7 @@ from sage.categories.all import Rings
 
 class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
 
-    def __init__(self, R, element_class = None, names = None):
-        
+    def __init__(self, R, element_class = None, names = None):        
         #Make sure R is a ring with unit element
         if not R in Rings():
             raise TypeError, "Argument R must be a ring."
@@ -38,9 +69,32 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
         sage.structure.parent_base.ParentWithBase.__init__(self, R)
 
     def ngens(self):
+        """
+        EXAMPLES::
+        
+                sage: R.<u,v,w,z> = FormalMultivariatePowerSeriesRing(QQ)
+                sage: R.ngens()
+                4
+        """
         return self._ngens
 
     def gen(self,i=0):
+        """
+        EXAMPLES::
+
+                sage: R.<u,v,w,z> = FormalMultivariatePowerSeriesRing(QQ)
+                sage: R.gen(2)
+                w
+
+        TESTS::
+                
+                sage: R.<u,v,w,z> = FormalMultivariatePowerSeriesRing(QQ)
+                sage: R.gen(4)
+                Traceback (most recent call last):
+                ...
+                ValueError: Generator not defined
+        """
+
         if i < 0 or i >= self._ngens:
             raise ValueError("Generator not defined")
         if self._gens[i] == None :
@@ -49,13 +103,26 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
         return self._gens[i]
 
     def gens(self):
+        """
+        EXAMPLES::
+
+                sage: R.<u,v,w,z> = FormalMultivariatePowerSeriesRing(QQ)
+                sage: R.gens()
+                [u, v, w, z]
+        """
         return [self.gen(i) for i in range(self._ngens)]
 
     def __repr__(self):
+        """
+        EXAMPLES::
+
+                sage: R.<u,v,w,z> = FormalMultivariatePowerSeriesRing(QQ)
+                sage: R
+                Formal Multivariate Power Series Ring over Rational Field
+        """
         return "Formal Multivariate Power Series Ring over %s"%self.base_ring()
 
     def __call__(self, x=None, order=unk):
-        
         cls = self._element_class
         BR = self.base_ring()
         
@@ -103,12 +170,40 @@ class FormalMultivariatePowerSeriesRing(LazyPowerSeriesRing):
 
 
     def zero_element(self):
+        """
+        EXAMPLES::
+                sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+                sage: R.zero_element()
+                0
+        """
         return self.term(0,[0]*self._ngens)
 
     def identity_element(self):
+        """
+        EXAMPLES::
+                sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+                sage: R.identity_element()
+                1
+        """
         return self.term(1,[0]*self._ngens)
 
     def term(self, r, n):
+        """
+        EXAMPLES::
+                sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+                sage: R.term(2,[1,4,0,2])
+                2*u^1*v^4*w^0*z^2
+
+        ::
+
+                sage: R.term(2,[0,0,0,0])
+                2
+
+        ::
+
+                sage: R.term(0,[1,9,0,3])
+                0
+        """
         if r == self.base_ring()(0):
             res = self._new_initial(inf, Stream([]))
             res._name = "0"
@@ -140,6 +235,36 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         self._pows = None
 
     def refine_aorder(self):
+        """
+        Refines the approximate order of self as much as possible without
+        computing any coefficients.
+
+        EXAMPLES::
+        
+            sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+            sage: L = R([[]])
+            sage: L.aorder
+            0
+            sage: L.refine_aorder()
+            1
+            sage: L.coeffcient(1)
+            []
+            sage: L.refine_aorder()
+            sage: L.aorder
+            Infinite series order
+
+       ::
+
+            sage: L = R([[],[],[(1,[1,1,0,0])],[]])
+            sage: L.aorder
+            0
+            sage: L.coefficient(2)
+            [(1,[1,1,0,0])]
+            sage: L.refine_aorder()
+            sage: L.aorder
+            2
+
+        """
         #If we already know the order, then we don't have
         #to worry about the approximate order
         if self.order != unk:
@@ -176,7 +301,8 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
                     self.aorder = inf
                     self.order  = inf
                     return
-                
+
+            # See ticket #14685 about LazyPowerSeries
             if self.order == unk:
                 while ao < n:
                     if self._stream[ao] == []:
@@ -194,6 +320,20 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             self._reference._copy(self)
 
     def _get_repr_info(self):
+        """
+        EXAMPLES::
+            sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+            sage: L = R([[],[(1,[1,0,0,0]),(3,[0,0,1,0])],[(1,[1,1,0,0]),(-5,[0,0,0,2])],[],[(1,[0,3,0,2])],[]])
+            sage: L.coefficients(5)
+            [[],
+             [(1, [1, 0, 0, 0]), (3, [0, 0, 1, 0])],
+             [(1, [1, 1, 0, 0]), (-5, [0, 0, 0, 2])],
+             [],
+             [(1, [0, 3, 0, 2])]]
+            sage: L._get_repr_info()
+            [('u', '1'), ('w', '3'), ('u*v', '1'), ('z^2', '-5'), ('v^3*z^2', '1')]
+        """
+
         n = len(self._stream)
         l = []
         if self._stream[0] <> []:
@@ -214,6 +354,14 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             
 
     def __repr__(self):
+        """
+        EXAMPLES::
+            sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+            sage: L = R([[],[(1,[1,0,0,0]),(3,[0,0,1,0])],[(1,[1,1,0,0]),(-5,[0,0,0,2])],[],[(1,[0,3,0,2])],[]])
+            sage: L.coefficients(5)
+            sage: L
+            u + 3*w + u*v + (-5)*z^2 + v^3*z^2
+        """
         if self._name is not None:
             return self._name
         
@@ -226,7 +374,13 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         return l
 
     def coefficient(self,*n):
-        
+        """
+        EXAMPLES::
+            sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+            sage: L = R([[],[(1,[1,0,0,0]),(3,[0,0,1,0])],[(1,[1,1,0,0]),(-5,[0,0,0,2])],[],[(1,[0,3,0,2])],[]])
+            sage: L.coefficient(4)
+            [(1,[0,3,0,2])]
+        """
         if len(n) == 1:
             n=n[0]
             if self.get_aorder() > n:
@@ -245,7 +399,16 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             raise ValueError, "n must be an integer or an integer's list of size ngens()"
 
     def _plus_gen(self,y,ao):
-
+        """
+        EXAMPLES::
+            sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+            sage: L = R([[],[(1,[1,0,0,0]),(3,[0,0,1,0])],[(1,[1,1,0,0]),(-5,[0,0,0,2])],[],[(1,[0,3,0,2])],[]])
+            sage: K = u+v+w*z+w^2
+            sage: G = L+K
+            sage: G.coefficient(10); G
+            []
+            2*u + v + 3*w + w*z + w^2 + u*v + (-5)*z^2 + v^3*z^2
+        """
         for n in range(ao):
             yield []
         n = ao
@@ -279,6 +442,16 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         self.is_initialized = True
 
     def _times_gen(self, y, ao):
+        """
+        EXAMPLES::
+            sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+            sage: L = R([[],[(1,[1,0,0,0]),(3,[0,0,1,0])],[(1,[1,1,0,0]),(-5,[0,0,0,2])],[],[(1,[0,3,0,2])],[]])
+            sage: K = u+v+w*z+w^2
+            sage: G = L*K
+            sage: G.coefficient(10); G
+            []
+            u^2 + 3*u*w + u*v + 3*v*w + u^2*v + (-5)*u*z^2 + u*v^2 + (-5)*v*z^2 + u*w*z + 3*w^2*z + u*w^2 + 3*w^3 + u*v*w*z + (-5)*w*z^3 + u*v*w^2 + (-5)*w^2*z^2 + u*v^3*z^2 + v^4*z^2 + v^3*w*z^3 + v^3*w^2*z^2
+        """
         for n in range(ao):
             yield []
 
@@ -320,6 +493,7 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             n += 1
 
     def _pows_gen(self):
+
         A=self
         yield self.parent().identity_element()
         yield A
@@ -328,6 +502,15 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             yield A
 
     def __pow__(self,n):
+        """
+        EXAMPLES::
+            sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+            sage: K = u+v+w*z+w^2
+            sage: G = K^7
+            sage: G.coefficient(20); G
+            []
+            u^7 + 7*u^6*v + 21*u^5*v^2 + 35*u^4*v^3 + 35*u^3*v^4 + 21*u^2*v^5 + 7*u*v^6 + v^7 + 7*u^6*w*z + 7*u^6*w^2 + 42*u^5*v*w*z + 42*u^5*v*w^2 + 105*u^4*v^2*w*z + 105*u^4*v^2*w^2 + 140*u^3*v^3*w*z + 140*u^3*v^3*w^2 + 105*u^2*v^4*w*z + 105*u^2*v^4*w^2 + 42*u*v^5*w*z + 42*u*v^5*w^2 + 7*v^6*w*z + 7*v^6*w^2 + 21*u^5*w^2*z^2 + 42*u^5*w^3*z + 21*u^5*w^4 + 105*u^4*v*w^2*z^2 + 210*u^4*v*w^3*z + 105*u^4*v*w^4 + 210*u^3*v^2*w^2*z^2 + 420*u^3*v^2*w^3*z + 210*u^3*v^2*w^4 + 210*u^2*v^3*w^2*z^2 + 420*u^2*v^3*w^3*z + 210*u^2*v^3*w^4 + 105*u*v^4*w^2*z^2 + 210*u*v^4*w^3*z + 105*u*v^4*w^4 + 21*v^5*w^2*z^2 + 42*v^5*w^3*z + 21*v^5*w^4 + 35*u^4*w^3*z^3 + 105*u^4*w^4*z^2 + 105*u^4*w^5*z + 35*u^4*w^6 + 140*u^3*v*w^3*z^3 + 420*u^3*v*w^4*z^2 + 420*u^3*v*w^5*z + 140*u^3*v*w^6 + 210*u^2*v^2*w^3*z^3 + 630*u^2*v^2*w^4*z^2 + 630*u^2*v^2*w^5*z + 210*u^2*v^2*w^6 + 140*u*v^3*w^3*z^3 + 420*u*v^3*w^4*z^2 + 420*u*v^3*w^5*z + 140*u*v^3*w^6 + 35*v^4*w^3*z^3 + 105*v^4*w^4*z^2 + 105*v^4*w^5*z + 35*v^4*w^6 + 35*u^3*w^4*z^4 + 140*u^3*w^5*z^3 + 210*u^3*w^6*z^2 + 140*u^3*w^7*z + 35*u^3*w^8 + 105*u^2*v*w^4*z^4 + 420*u^2*v*w^5*z^3 + 630*u^2*v*w^6*z^2 + 420*u^2*v*w^7*z + 105*u^2*v*w^8 + 105*u*v^2*w^4*z^4 + 420*u*v^2*w^5*z^3 + 630*u*v^2*w^6*z^2 + 420*u*v^2*w^7*z + 105*u*v^2*w^8 + 35*v^3*w^4*z^4 + 140*v^3*w^5*z^3 + 210*v^3*w^6*z^2 + 140*v^3*w^7*z + 35*v^3*w^8 + 21*u^2*w^5*z^5 + 105*u^2*w^6*z^4 + 210*u^2*w^7*z^3 + 210*u^2*w^8*z^2 + 105*u^2*w^9*z + 21*u^2*w^10 + 42*u*v*w^5*z^5 + 210*u*v*w^6*z^4 + 420*u*v*w^7*z^3 + 420*u*v*w^8*z^2 + 210*u*v*w^9*z + 42*u*v*w^10 + 21*v^2*w^5*z^5 + 105*v^2*w^6*z^4 + 210*v^2*w^7*z^3 + 210*v^2*w^8*z^2 + 105*v^2*w^9*z + 21*v^2*w^10 + 7*u*w^6*z^6 + 42*u*w^7*z^5 + 105*u*w^8*z^4 + 140*u*w^9*z^3 + 105*u*w^10*z^2 + 42*u*w^11*z + 7*u*w^12 + 7*v*w^6*z^6 + 42*v*w^7*z^5 + 105*v*w^8*z^4 + 140*v*w^9*z^3 + 105*v*w^10*z^2 + 42*v*w^11*z + 7*v*w^12 + w^7*z^7 + 7*w^8*z^6 + 21*w^9*z^5 + 35*w^10*z^4 + 35*w^11*z^3 + 21*w^12*z^2 + 7*w^13*z + w^14
+        """
         if not isinstance(n, (int, Integer)) or n < 0:
             raise ValueError, "n must be a nonnegative integer"
         else:
@@ -362,9 +545,41 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             k +=1
 
     def seq(self):
+        """
+        EXAMPLES::
+            sage: R.<u,v,w,z> = = FormalMultivariatePowerSeriesRing(QQ)
+            sage: L = u.seq()
+            sage: L.coeffcient(10); L
+            [(1, [10, 0, 0, 0])]
+            1 + u + u^2 + u^3 + u^4 + u^5 + u^6 + u^7 + u^8 + u^9 + u^10
+
+        ::
+
+            sage: L = (u+v^2+3*w*z).seq()
+            sage: L.coefficient(4); L
+            [(1, [0, 4, 0, 0]),
+            (6, [0, 2, 1, 1]),
+            (9, [0, 0, 2, 2]),
+            (3, [2, 2, 0, 0]),
+            (9, [2, 0, 1, 1]),
+            (1, [4, 0, 0, 0])]
+            1 + u + v^2 + 3*w*z + u^2 + 2*u*v^2 + 6*u*w*z + u^3 + v^4 + 6*v^2*w*z + 9*w^2*z^2 + 3*u^2*v^2 + 9*u^2*w*z + u^4
+
+        """
+
         return self._new(self._seq_gen, lambda *a : 0 )
 
     def composition(self,*args):
+        """
+        EXAMPLES::
+            
+            sage: L = u+v^2+3*w*z+w^2
+            sage: K = u+v^2
+            sage: G = L(u,v,K,z)
+            sage: G.coefficient(10); G
+            []
+            u + v^2 + 3*u*z + u^2 + 3*v^2*z + 2*u*v^2 + v^4
+        """
         if len(args) != self.parent().ngens() :
             raise ValueError, "you have to give %d arguments"%self.parent.ngens()
         return self._new(partial(self._compose_gen, args),lambda *a : self.aorder)
@@ -396,6 +611,16 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
             n+=1
 
     def derivative(self,var):
+        """
+        EXAMPLES::
+            
+            sage: L = u+v^2+3*w*z+w^2
+            sage: G = L.derivative(w)
+            sage: G.coefficient(10); G
+            []
+            3*z + 2*w
+        """
+            
         return self._new(partial(self._diff_gen,var),bounded_decrement,self)
 
     def _diff_gen(self,var,ao):
@@ -416,6 +641,20 @@ class FormalMultivariatePowerSeries(LazyPowerSeries):
         
 
     def toPolynom(self,n):
+        """
+        Return a couple compoosed by a polynomial ring and the polynomial
+        equal to the truncated series of degree n-1
+
+        EXAMPLES::
+            
+           sage: 
+           sage: L = u+v^2+3*w*z+w^2+u*v*z*w+u^2*v+w*z^4+v^6
+           sage: (PolRing,PolL) = L.toPolynom(3)
+           sage: PolL
+           v^2 + w^2 + 3*w*z + u
+           sage: PolRing
+           Multivariate Polynomial Ring in u, v, w, z over Rational Field
+        """        
         if n>0:
             from sage.rings.polynomial.all import PolynomialRing
             BR=self.parent().base_ring()
